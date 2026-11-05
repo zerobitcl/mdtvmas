@@ -1,0 +1,121 @@
+{
+  "channel_info": {
+    "name": "MDTV+",
+    "tagline": "La Señal Oficial del Deporte en Atacama",
+    "whatsapp": "+56900000000",
+    "youtube_handle": "@mdtvmas",
+    "website": "https://mdtvmas.cl",
+    "region": "Región de Atacama, Chile"
+  },
+  "live_stream": {
+    "is_live": true,
+    "youtube_id": "jfKfPfyJRdk",
+    "match_title": "Deportes Vallenar vs Municipal Mejillones",
+    "tournament": "Tercera División B - Grupo Norte | Fecha 14",
+    "stadium": "Estadio Municipal Nelson Rojas, Vallenar",
+    "home_team": {
+      "name": "Deportes Vallenar",
+      "short": "VAL",
+      "color": "#00843D",
+      "score": 2
+    },
+    "away_team": {
+      "name": "Mun. Mejillones",
+      "short": "MEJ",
+      "color": "#0038A8",
+      "score": 1
+    },
+    "match_status_badge": "EN VIVO • 2° TIEMPO",
+    "next_match_iso": "2026-11-08T16:00:00-03:00",
+    "next_match_title": "Deportes Copiapó B vs Atlético Copiapó"
+  },
+  "sponsors": [
+    {
+      "name": "MD Climatización",
+      "category": "Presentador Oficial",
+      "cta": "Climatización profesional para tu hogar y empresa. Cotiza hoy.",
+      "whatsapp": "https://wa.me/56900000000?text=Hola%2C%20vi%20MD%20Climatizaci%C3%B3n%20en%20MDTV%2B%20y%20quiero%20cotizar",
+      "tier": "presenter"
+    },
+    {
+      "name": "Ilustre Municipalidad de Vallenar",
+      "category": "Auspiciador Gold",
+      "cta": "Apoyando el deporte local de Atacama.",
+      "whatsapp": "https://wa.me/56900000000?text=Hola%2C%20vi%20a%20la%20Municipalidad%20de%20Vallenar%20en%20MDTV%2B",
+      "tier": "gold"
+    },
+    {
+      "name": "Comercial Atacama",
+      "category": "Auspiciador Gold",
+      "cta": "Todo para tu negocio y tu familia en la Región.",
+      "whatsapp": "https://wa.me/56900000000?text=Hola%2C%20vi%20Comercial%20Atacama%20en%20MDTV%2B",
+      "tier": "gold"
+    },
+    {
+      "name": "Espacio Disponible",
+      "category": "Anuncia Aquí",
+      "cta": "Tu marca puede aparecer aquí ante miles de hinchas.",
+      "whatsapp": "https://wa.me/56900000000?text=Hola%20MDTV%2B%2C%20quiero%20anunciar%20mi%20marca%20en%20las%20transmisiones%20en%20vivo",
+      "tier": "available"
+    }
+  ],
+  "upcoming_matches": [
+    {
+      "date": "2026-11-08",
+      "time": "16:00",
+      "home": "Deportes Copiapó B",
+      "away": "Atlético Copiapó",
+      "tournament": "Tercera División B - Grupo Norte",
+      "stadium": "Estadio Luis Valenzuela Hermosilla, Copiapó",
+      "iso": "2026-11-08T16:00:00-03:00"
+    },
+    {
+      "date": "2026-11-15",
+      "time": "15:30",
+      "home": "Provincial Ovalle",
+      "away": "Deportes Vallenar",
+      "tournament": "Tercera División B - Grupo Norte",
+      "stadium": "Estadio Diaguita, Ovalle",
+      "iso": "2026-11-15T15:30:00-03:00"
+    },
+    {
+      "date": "2026-11-22",
+      "time": "17:00",
+      "home": "Municipal Mejillones",
+      "away": "Deportes Tocopilla",
+      "tournament": "Tercera División B - Grupo Norte",
+      "stadium": "Estadio Municipal de Mejillones",
+      "iso": "2026-11-22T17:00:00-03:00"
+    }
+  ],
+  "vod_matches": [
+    {
+      "title": "Deportes Vallenar 3-1 Provincial Ovalle",
+      "date": "2026-10-25",
+      "tournament": "Tercera División B - Fecha 12",
+      "thumbnail": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&q=80",
+      "youtube_id": "jfKfPfyJRdk"
+    },
+    {
+      "title": "Mun. Mejillones 2-2 Deportes Copiapó B",
+      "date": "2026-10-18",
+      "tournament": "Tercera División B - Fecha 11",
+      "thumbnail": "https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800&q=80",
+      "youtube_id": "jfKfPfyJRdk"
+    },
+    {
+      "title": "Atlético Copiapó 0-2 Deportes Vallenar",
+      "date": "2026-10-11",
+      "tournament": "Tercera División B - Fecha 10",
+      "thumbnail": "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80",
+      "youtube_id": "jfKfPfyJRdk"
+    },
+    {
+      "title": "Deportes Tocopilla 1-4 Mun. Mejillones",
+      "date": "2026-10-04",
+      "tournament": "Tercera División B - Fecha 9",
+      "thumbnail": "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=80",
+      "youtube_id": "jfKfPfyJRdk"
+    }
+  ]
+}

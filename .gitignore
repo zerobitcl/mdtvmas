@@ -1,0 +1,11 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.tmp
+.vscode/
+.idea/
+
+# Uploads de auspiciadores (se generan en el servidor)
+assets/uploads/*
+!assets/uploads/.gitkeep
+!assets/uploads/.htaccess
