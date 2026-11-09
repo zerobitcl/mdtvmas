@@ -1215,6 +1215,29 @@ h3 {
   box-shadow: var(--shadow-card);
 }
 
+.ticket--featured {
+  border-color: rgba(0, 230, 118, 0.45);
+  box-shadow: 0 0 0 1px rgba(0, 230, 118, 0.18), var(--shadow-card);
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.08), var(--bg-elevated) 55%);
+}
+
+.ticket--featured .ticket__date {
+  background: linear-gradient(180deg, rgba(0, 230, 118, 0.28), rgba(15, 20, 31, 0.92));
+}
+
+.ticket__badge {
+  align-self: flex-start;
+  margin-bottom: 2px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #04140a;
+  background: var(--neon);
+}
+
 .ticket__date {
   background: linear-gradient(180deg, rgba(230, 57, 70, 0.2), rgba(15, 20, 31, 0.9));
   border-right: 1px dashed var(--border-strong);
@@ -1569,14 +1592,18 @@ h3 {
   overflow: hidden;
   border: 1px solid var(--border);
   background: #0b0e14;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .comunidad__card img {
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: center;
 }
 
 .comunidad__actions {

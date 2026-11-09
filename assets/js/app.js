@@ -92,6 +92,7 @@
         tournament: "Tercera División B - Grupo Norte",
         stadium: "Estadio Luis Valenzuela Hermosilla, Copiapó",
         iso: "2026-11-08T16:00:00-03:00",
+        featured: true,
       },
       {
         date: "2026-11-15",
@@ -101,6 +102,7 @@
         tournament: "Tercera División B - Grupo Norte",
         stadium: "Estadio Diaguita, Ovalle",
         iso: "2026-11-15T15:30:00-03:00",
+        featured: false,
       },
       {
         date: "2026-11-22",
@@ -110,6 +112,7 @@
         tournament: "Tercera División B - Grupo Norte",
         stadium: "Estadio Municipal de Mejillones",
         iso: "2026-11-22T17:00:00-03:00",
+        featured: false,
       },
     ],
     vod_matches: [
@@ -645,16 +648,28 @@
     const grid = $("#upcoming-grid");
     if (!grid) return;
 
-    grid.innerHTML = state.config.upcoming_matches
+    const matches = [...(state.config.upcoming_matches || [])].sort((a, b) => {
+      const af = a.featured ? 1 : 0;
+      const bf = b.featured ? 1 : 0;
+      return bf - af;
+    });
+
+    grid.innerHTML = matches
       .map((m) => {
         const { day, month } = formatTicketDate(m.iso || m.date);
+        const featured = Boolean(m.featured);
         return `
-          <article class="ticket">
+          <article class="ticket${featured ? " ticket--featured" : ""}">
             <div class="ticket__date">
               <span class="ticket__day">${day}</span>
               <span class="ticket__month">${month}</span>
             </div>
             <div class="ticket__body">
+              ${
+                featured
+                  ? `<p class="ticket__badge">★ Más esperado</p>`
+                  : ""
+              }
               <p class="ticket__time">${escapeHtml(m.time)} hrs · Chile</p>
               <h3 class="ticket__match">${escapeHtml(m.home)} vs ${escapeHtml(m.away)}</h3>
               <p class="ticket__meta">${escapeHtml(m.tournament)}</p>

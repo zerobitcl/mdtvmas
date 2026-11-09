@@ -78,7 +78,8 @@
       "away": "Atlético Copiapó",
       "tournament": "Tercera División B - Grupo Norte",
       "stadium": "Estadio Luis Valenzuela Hermosilla, Copiapó",
-      "iso": "2026-11-08T16:00:00-03:00"
+      "iso": "2026-11-08T16:00:00-03:00",
+      "featured": true
     },
     {
       "date": "2026-11-15",
@@ -87,7 +88,8 @@
       "away": "Deportes Vallenar",
       "tournament": "Tercera División B - Grupo Norte",
       "stadium": "Estadio Diaguita, Ovalle",
-      "iso": "2026-11-15T15:30:00-03:00"
+      "iso": "2026-11-15T15:30:00-03:00",
+      "featured": false
     },
     {
       "date": "2026-11-22",
@@ -96,7 +98,8 @@
       "away": "Deportes Tocopilla",
       "tournament": "Tercera División B - Grupo Norte",
       "stadium": "Estadio Municipal de Mejillones",
-      "iso": "2026-11-22T17:00:00-03:00"
+      "iso": "2026-11-22T17:00:00-03:00",
+      "featured": false
     }
   ],
   "vod_matches": [

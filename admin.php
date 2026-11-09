@@ -451,7 +451,20 @@ function merge_incoming_config(array $base, array $incoming): array
                 'tournament' => (string)($m['tournament'] ?? ''),
                 'stadium'    => (string)($m['stadium'] ?? ''),
                 'iso'        => $iso,
+                'featured'   => filter_var($m['featured'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ];
+        }
+        // Solo un partido "más esperado"
+        $featuredIdx = -1;
+        foreach ($upcoming as $i => $row) {
+            if (!empty($row['featured'])) {
+                $featuredIdx = $i;
+            }
+        }
+        if ($featuredIdx >= 0) {
+            foreach ($upcoming as $i => $_) {
+                $upcoming[$i]['featured'] = ($i === $featuredIdx);
+            }
         }
         $out['upcoming_matches'] = $upcoming;
     }
@@ -919,7 +932,20 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
       border-radius: 12px; padding: 12px; margin-bottom: 10px; position: relative;
     }
     .item-card__actions {
-      display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;
+      display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 8px;
+    }
+    .item-card.is-featured {
+      border-color: rgba(0, 230, 118, 0.45);
+      box-shadow: 0 0 0 1px rgba(0, 230, 118, 0.2);
+    }
+    .btn-featured {
+      display: inline-flex; align-items: center; gap: 6px;
+      min-height: 40px; padding: 8px 12px; border-radius: 8px;
+      border: 1px solid var(--border2); color: var(--muted);
+      background: rgba(255,255,255,.03); font-weight: 700; font-size: .8rem;
+    }
+    .btn-featured.is-on {
+      color: #04140a; background: var(--neon); border-color: var(--neon);
     }
     .btn-danger {
       min-height: 40px; padding: 8px 12px; border-radius: 8px;
@@ -1438,7 +1464,7 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
     function renderUpcoming() {
       const list = $("#upcoming-list");
       list.innerHTML = state.upcoming.map((m, i) => `
-        <div class="item-card" data-idx="${i}">
+        <div class="item-card ${m.featured ? "is-featured" : ""}" data-idx="${i}">
           <div class="row-2">
             <div class="field">
               <label>Local</label>
@@ -1461,7 +1487,11 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
             <label>Estadio</label>
             <input type="text" data-f="stadium" value="${esc(m.stadium || "")}">
           </div>
+          <input type="hidden" data-f="featured" value="${m.featured ? "1" : "0"}">
           <div class="item-card__actions">
+            <button type="button" class="btn-featured ${m.featured ? "is-on" : ""}" data-feature-upcoming="${i}" aria-pressed="${m.featured ? "true" : "false"}">
+              ${m.featured ? "★ Más esperado" : "☆ Marcar como más esperado"}
+            </button>
             <button type="button" class="btn-danger" data-remove-upcoming="${i}">Eliminar</button>
           </div>
         </div>
@@ -1486,6 +1516,7 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
           date,
           time,
           iso: datetime_local ? datetime_local + ":00-03:00" : "",
+          featured: (card.querySelector('[data-f="featured"]')?.value || "0") === "1",
         };
       });
     }
@@ -1763,11 +1794,23 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
           date: "",
           time: "16:00",
           iso: "",
+          featured: false,
         });
         renderUpcoming();
       });
 
       $("#upcoming-list").addEventListener("click", (e) => {
+        const featureBtn = e.target.closest("[data-feature-upcoming]");
+        if (featureBtn) {
+          readUpcomingFromDom();
+          const idx = Number(featureBtn.dataset.featureUpcoming);
+          const turningOn = !state.upcoming[idx]?.featured;
+          state.upcoming.forEach((m, i) => {
+            m.featured = turningOn && i === idx;
+          });
+          renderUpcoming();
+          return;
+        }
         const btn = e.target.closest("[data-remove-upcoming]");
         if (!btn) return;
         readUpcomingFromDom();
