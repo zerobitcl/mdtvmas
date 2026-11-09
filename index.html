@@ -14,19 +14,22 @@
   <meta property="og:description" content="Mira gratis el fútbol de Tercera División A/B y el deporte de la Región de Atacama. Transmisión oficial en vivo por MDTV+.">
   <meta property="og:url" content="https://mdtvmas.cl/">
   <meta property="og:locale" content="es_CL">
-  <meta property="og:image" content="https://mdtvmas.cl/assets/img/og-cover.jpg">
-  <meta property="og:image:secure_url" content="https://mdtvmas.cl/assets/img/og-cover.jpg">
-  <meta property="og:image:type" content="image/jpeg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
+  <meta property="og:image" content="https://mdtvmas.cl/assets/img/logo.png">
+  <meta property="og:image:secure_url" content="https://mdtvmas.cl/assets/img/logo.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1024">
+  <meta property="og:image:height" content="1024">
   <meta property="og:image:alt" content="MDTV+ — Transmisión deportiva en vivo Región de Atacama">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="🔴 MDTV+ EN VIVO | Deporte en Atacama">
   <meta name="twitter:description" content="Señal oficial del fútbol regional y Tercera División. Mira gratis en mdtvmas.cl">
-  <meta name="twitter:image" content="https://mdtvmas.cl/assets/img/og-cover.jpg">
+  <meta name="twitter:image" content="https://mdtvmas.cl/assets/img/logo.png">
 
   <title>MDTV+ | La Señal Oficial del Deporte en Atacama</title>
+
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/logo.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,8 +54,12 @@
         },
         "sameAs": [
           "https://www.youtube.com/@mdtvmas",
-          "https://wa.me/56900000000"
-        ]
+          "https://www.instagram.com/md.tvmas/",
+          "https://www.facebook.com/profile.php?id=61561203236561",
+          "https://wa.me/56962397613"
+        ],
+        "email": "contacto@mdtvmas.cl",
+        "telephone": "+56962397613"
       },
       {
         "@type": "BroadcastEvent",
@@ -101,12 +108,20 @@
         <span class="live-dot" aria-hidden="true"></span>
         <span class="ticker__status-text">SEÑAL EN VIVO</span>
       </div>
-      <div class="ticker__social">
-        <a href="https://www.youtube.com/@mdtvmas" target="_blank" rel="noopener noreferrer" class="ticker__link" aria-label="YouTube MDTV+">YouTube</a>
-        <a href="https://wa.me/56900000000" target="_blank" rel="noopener noreferrer" class="ticker__link" aria-label="WhatsApp MDTV+">WhatsApp</a>
+      <div class="ticker__social" id="ticker-social">
+        <a href="https://www.youtube.com/@mdtvmas?sub_confirmation=1" target="_blank" rel="noopener noreferrer" class="ticker__link ticker__link--sub" data-social="youtube-sub" aria-label="Suscríbete a YouTube MDTV+">Suscríbete</a>
+        <a href="https://www.instagram.com/md.tvmas/" target="_blank" rel="noopener noreferrer" class="ticker__icon-link" data-social="instagram" aria-label="Instagram MDTV+">
+          <svg class="social-ico social-ico--ig" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8A3.6 3.6 0 0 0 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6A3.6 3.6 0 0 0 16.4 4H7.6m9.65 1.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10m0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+        </a>
+        <a href="https://www.facebook.com/profile.php?id=61561203236561" target="_blank" rel="noopener noreferrer" class="ticker__icon-link" data-social="facebook" aria-label="Facebook MDTV+">
+          <svg class="social-ico social-ico--fb" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M14 8.5h2.5V5H14c-2.2 0-4 1.8-4 4v1.5H7.5V14H10v6h3.5v-6H16l.5-3.5H13.5V9c0-.3.2-.5.5-.5z"/></svg>
+        </a>
+        <a href="https://wa.me/56962397613" target="_blank" rel="noopener noreferrer" class="ticker__icon-link" data-social="whatsapp" aria-label="WhatsApp MDTV+">
+          <svg class="social-ico social-ico--wa" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.15 6.4 2.15 11.84c0 1.98.58 3.82 1.58 5.4L2 22l4.92-1.67a9.86 9.86 0 0 0 5.12 1.4h.01c5.46 0 9.89-4.4 9.89-9.84C21.94 6.4 17.5 2 12.04 2m0 17.94h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-3.05 1.01 1.03-2.97-.2-.31a8.08 8.08 0 0 1-1.24-4.32c0-4.48 3.67-8.12 8.19-8.12 4.5 0 8.18 3.64 8.18 8.12 0 4.48-3.68 8.1-8.18 8.1m4.49-6.07c-.25-.12-1.46-.72-1.69-.8-.22-.09-.39-.12-.55.12-.16.25-.63.8-.77.97-.14.16-.29.18-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.43.06-.65.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.55c.12.17 1.75 2.67 4.24 3.74 1.49.64 2.08.7 2.82.59.43-.07 1.46-.6 1.66-1.17.21-.58.21-1.07.14-1.17-.06-.11-.23-.17-.48-.29"/></svg>
+        </a>
       </div>
-      <a href="https://wa.me/56900000000?text=Hola%20MDTV%2B%2C%20quiero%20anunciar%20mi%20marca%20en%20vivo" target="_blank" rel="noopener noreferrer" class="ticker__cta">
-        Anuncia tu Marca en Vivo
+      <a href="https://www.youtube.com/@mdtvmas?sub_confirmation=1" target="_blank" rel="noopener noreferrer" class="ticker__cta ticker__cta--sub" data-social="youtube-sub" id="ticker-subscribe">
+        Suscríbete
       </a>
     </div>
   </aside>
@@ -115,22 +130,21 @@
   <header class="site-header" id="site-header">
     <div class="site-header__inner">
       <a href="/" class="logo" aria-label="MDTV+ Inicio">
-        <span class="logo__mark">MDTV<span class="logo__plus">+</span></span>
-        <span class="logo__badge" aria-hidden="true">HD</span>
+        <img class="logo__img" src="assets/img/logo.png" alt="MDTV+ Streaming" width="160" height="160" decoding="async">
       </a>
 
       <nav class="nav" aria-label="Navegación principal">
         <a href="#envivo" class="nav__link">En Vivo</a>
         <a href="#cartelera" class="nav__link">Cartelera</a>
         <a href="#archivo" class="nav__link">Archivo</a>
+        <a href="#comunidad" class="nav__link">Comunidad</a>
         <a href="#auspiciadores" class="nav__link">Auspiciadores</a>
       </nav>
 
       <div class="header-actions">
-        <button type="button" class="btn btn--demo" id="btn-toggle-live" hidden aria-pressed="true" title="Alternar vista En Vivo / Previa para demostración">
-          <span class="btn__icon" aria-hidden="true">◉</span>
-          <span class="btn__label">Modo Demo: Alternar En Vivo / Previa</span>
-        </button>
+        <a href="https://www.youtube.com/@mdtvmas?sub_confirmation=1" target="_blank" rel="noopener noreferrer" class="btn btn--subscribe" data-social="youtube-sub" id="header-subscribe">
+          Suscríbete
+        </a>
         <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="mobile-nav" aria-label="Abrir menú">
           <span></span><span></span><span></span>
         </button>
@@ -141,8 +155,10 @@
       <a href="#envivo" class="mobile-nav__link">En Vivo</a>
       <a href="#cartelera" class="mobile-nav__link">Cartelera</a>
       <a href="#archivo" class="mobile-nav__link">Archivo</a>
+      <a href="#comunidad" class="mobile-nav__link">Comunidad</a>
       <a href="#auspiciadores" class="mobile-nav__link">Auspiciadores</a>
       <a href="#comercial" class="mobile-nav__link">Anuncia Aquí</a>
+      <a href="https://www.youtube.com/@mdtvmas?sub_confirmation=1" target="_blank" rel="noopener noreferrer" class="mobile-nav__link mobile-nav__link--sub" data-social="youtube-sub">Suscríbete en YouTube</a>
     </nav>
   </header>
 
@@ -269,7 +285,39 @@
       </div>
     </section>
 
-    <!-- 7. B2B Commercial -->
+    <!-- 7. Comunidad / Suscríbete -->
+    <section class="comunidad" id="comunidad" aria-labelledby="comunidad-heading">
+      <div class="section-head">
+        <p class="eyebrow">Comunidad MDTV+</p>
+        <h2 id="comunidad-heading">Síguenos y no te pierdas ninguna transmisión</h2>
+      </div>
+
+      <div class="comunidad__grid">
+        <article class="comunidad__card">
+          <img src="assets/img/promo-redes.jpg" alt="Síguenos en Facebook y suscríbete a YouTube MDTV+" width="1200" height="675" loading="lazy" decoding="async">
+        </article>
+        <article class="comunidad__card">
+          <img src="assets/img/promo-narracion.jpg" alt="Narración en vivo MDTV+" width="1200" height="675" loading="lazy" decoding="async">
+        </article>
+      </div>
+
+      <div class="comunidad__actions">
+        <a href="https://www.youtube.com/@mdtvmas?sub_confirmation=1" target="_blank" rel="noopener noreferrer" class="btn btn--subscribe btn--lg" data-social="youtube-sub" id="comunidad-subscribe">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
+          Suscríbete en YouTube
+        </a>
+        <a href="https://www.instagram.com/md.tvmas/" target="_blank" rel="noopener noreferrer" class="btn btn--social btn--ig" data-social="instagram">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8A3.6 3.6 0 0 0 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6A3.6 3.6 0 0 0 16.4 4H7.6m9.65 1.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10m0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+          Instagram
+        </a>
+        <a href="https://www.facebook.com/profile.php?id=61561203236561" target="_blank" rel="noopener noreferrer" class="btn btn--social btn--fb" data-social="facebook">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M14 8.5h2.5V5H14c-2.2 0-4 1.8-4 4v1.5H7.5V14H10v6h3.5v-6H16l.5-3.5H13.5V9c0-.3.2-.5.5-.5z"/></svg>
+          Facebook
+        </a>
+      </div>
+    </section>
+
+    <!-- 8. B2B Commercial -->
     <section class="comercial" id="comercial" aria-labelledby="comercial-heading">
       <div class="comercial__inner">
         <p class="eyebrow eyebrow--accent">Para marcas y negocios</p>
@@ -291,26 +339,48 @@
           </article>
         </div>
 
-        <a id="comercial-wa" href="https://wa.me/56900000000?text=Hola%20MDTV%2B%2C%20quiero%20cotizar%20publicidad%20en%20las%20transmisiones" target="_blank" rel="noopener noreferrer" class="btn btn--primary btn--lg">
+        <a id="comercial-wa" href="https://wa.me/56962397613?text=Hola%20MDTV%2B%2C%20quiero%20cotizar%20publicidad%20en%20las%20transmisiones" target="_blank" rel="noopener noreferrer" class="btn btn--primary btn--lg">
           Cotizar por WhatsApp
         </a>
       </div>
     </section>
   </main>
 
-  <!-- 8. Footer -->
+  <!-- 9. Footer -->
   <footer class="site-footer">
     <div class="site-footer__inner">
       <div class="site-footer__brand">
-        <span class="logo__mark">MDTV<span class="logo__plus">+</span></span>
+        <img class="logo__img logo__img--footer" src="assets/img/logo.png" alt="MDTV+ Streaming" width="160" height="160" loading="lazy" decoding="async">
         <p>La Señal Oficial del Deporte en Atacama</p>
       </div>
+
+      <div class="site-footer__social" aria-label="Redes sociales">
+        <a href="https://www.youtube.com/@mdtvmas?sub_confirmation=1" target="_blank" rel="noopener noreferrer" data-social="youtube-sub" aria-label="YouTube">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8zM9.75 15.02V8.98L15.5 12l-5.75 3.02z"/></svg>
+        </a>
+        <a href="https://www.instagram.com/md.tvmas/" target="_blank" rel="noopener noreferrer" data-social="instagram" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8A3.6 3.6 0 0 0 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6A3.6 3.6 0 0 0 16.4 4H7.6m9.65 1.5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10m0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+        </a>
+        <a href="https://www.facebook.com/profile.php?id=61561203236561" target="_blank" rel="noopener noreferrer" data-social="facebook" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M14 8.5h2.5V5H14c-2.2 0-4 1.8-4 4v1.5H7.5V14H10v6h3.5v-6H16l.5-3.5H13.5V9c0-.3.2-.5.5-.5z"/></svg>
+        </a>
+        <a href="https://wa.me/56962397613" target="_blank" rel="noopener noreferrer" data-social="whatsapp" aria-label="WhatsApp">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12.04 2C6.58 2 2.15 6.4 2.15 11.84c0 1.98.58 3.82 1.58 5.4L2 22l4.92-1.67a9.86 9.86 0 0 0 5.12 1.4h.01c5.46 0 9.89-4.4 9.89-9.84C21.94 6.4 17.5 2 12.04 2m0 17.94h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-3.05 1.01 1.03-2.97-.2-.31a8.08 8.08 0 0 1-1.24-4.32c0-4.48 3.67-8.12 8.19-8.12 4.5 0 8.18 3.64 8.18 8.12 0 4.48-3.68 8.1-8.18 8.1m4.49-6.07c-.25-.12-1.46-.72-1.69-.8-.22-.09-.39-.12-.55.12-.16.25-.63.8-.77.97-.14.16-.29.18-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.43.06-.65.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.55c.12.17 1.75 2.67 4.24 3.74 1.49.64 2.08.7 2.82.59.43-.07 1.46-.6 1.66-1.17.21-.58.21-1.07.14-1.17-.06-.11-.23-.17-.48-.29"/></svg>
+        </a>
+      </div>
+
+      <div class="site-footer__contact" id="footer-contact">
+        <a href="tel:+56962397613" data-contact="phone">+56 9 6239 7613</a>
+        <a href="mailto:contacto@mdtvmas.cl" data-contact="email-contacto">contacto@mdtvmas.cl</a>
+        <a href="mailto:ventas@mdtvmas.cl" data-contact="email-ventas">ventas@mdtvmas.cl</a>
+      </div>
+
       <nav class="site-footer__nav" aria-label="Enlaces del pie">
         <a href="#envivo">En Vivo</a>
         <a href="#cartelera">Cartelera</a>
         <a href="#archivo">Archivo</a>
+        <a href="#comunidad">Comunidad</a>
         <a href="#comercial">Anuncia Aquí</a>
-        <a href="https://www.youtube.com/@mdtvmas" target="_blank" rel="noopener noreferrer">YouTube</a>
       </nav>
       <p class="site-footer__seal">Plataforma optimizada para streaming de alta velocidad · Región de Atacama, Chile</p>
       <p class="site-footer__copy">© <span id="year"></span> MDTV+. Todos los derechos reservados.</p>

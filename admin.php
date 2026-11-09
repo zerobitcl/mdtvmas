@@ -630,6 +630,8 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#07090E">
   <title>MDTV+ STUDIO — Cabina de Control</title>
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
@@ -687,14 +689,27 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
       box-shadow: 0 24px 48px rgba(0,0,0,.4);
     }
     .login__brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .login__brand img {
+      width: 88px;
+      height: 88px;
+      object-fit: contain;
+      border-radius: 16px;
+    }
+    .login__brand-text {
       font-family: var(--display);
       font-weight: 800;
-      font-size: 1.6rem;
+      font-size: 1.25rem;
       letter-spacing: -.03em;
-      margin-bottom: 6px;
     }
-    .login__brand span { color: var(--live); }
-    .login__sub { color: var(--muted); font-size: .9rem; margin-bottom: 22px; }
+    .login__brand-text span { color: var(--live); }
+    .login__sub { color: var(--muted); font-size: .9rem; margin-bottom: 22px; text-align: center; }
     .login__error {
       background: rgba(230,57,70,.12);
       border: 1px solid rgba(230,57,70,.4);
@@ -753,6 +768,9 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
     .topbar__brand {
       font-family: var(--display); font-weight: 800; font-size: 1rem;
       letter-spacing: -.02em; display: flex; align-items: center; gap: 8px; min-width: 0;
+    }
+    .topbar__brand img {
+      width: 36px; height: 36px; object-fit: contain; border-radius: 8px; flex-shrink: 0;
     }
     .topbar__brand b { color: var(--live); }
     .status-pill {
@@ -991,7 +1009,10 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
     <form class="login__card" method="post" action="admin.php" autocomplete="off">
       <input type="hidden" name="action" value="login">
       <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
-      <div class="login__brand">MDTV<span>+</span> STUDIO</div>
+      <div class="login__brand">
+        <img src="assets/img/logo.png" alt="MDTV+ Streaming" width="88" height="88">
+        <div class="login__brand-text">MDTV<span>+</span> STUDIO</div>
+      </div>
       <p class="login__sub">Cabina de control del director · Acceso restringido</p>
       <?php if (!empty($loginError)): ?>
         <div class="login__error"><?= htmlspecialchars($loginError, ENT_QUOTES, 'UTF-8') ?></div>
@@ -1009,6 +1030,7 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
 
   <header class="topbar">
     <div class="topbar__brand">
+      <img src="assets/img/logo.png" alt="MDTV+" width="36" height="36">
       MDTV<b>+</b> STUDIO
       <span class="status-pill is-live" id="air-status"><span class="dot"></span><span id="air-status-text">AL AIRE</span></span>
     </div>
@@ -1683,7 +1705,7 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
           name: "Nueva Marca",
           category: "Auspiciador Gold",
           cta: "Tu mensaje aquí",
-          whatsapp: "https://wa.me/56900000000",
+          whatsapp: "https://wa.me/56962397613",
           tier: "gold",
           logo_url: "",
         });

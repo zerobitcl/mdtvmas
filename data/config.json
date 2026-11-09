@@ -2,8 +2,14 @@
   "channel_info": {
     "name": "MDTV+",
     "tagline": "La Señal Oficial del Deporte en Atacama",
-    "whatsapp": "+56900000000",
+    "whatsapp": "+56962397613",
+    "email_contacto": "contacto@mdtvmas.cl",
+    "email_ventas": "ventas@mdtvmas.cl",
     "youtube_handle": "@mdtvmas",
+    "youtube_url": "https://www.youtube.com/@mdtvmas",
+    "youtube_subscribe": "https://www.youtube.com/@mdtvmas?sub_confirmation=1",
+    "instagram": "https://www.instagram.com/md.tvmas/",
+    "facebook": "https://www.facebook.com/profile.php?id=61561203236561",
     "website": "https://mdtvmas.cl",
     "region": "Región de Atacama, Chile"
   },
@@ -33,29 +39,30 @@
     {
       "name": "MD Climatización",
       "category": "Presentador Oficial",
-      "cta": "Climatización profesional para tu hogar y empresa. Cotiza hoy.",
-      "whatsapp": "https://wa.me/56900000000?text=Hola%2C%20vi%20MD%20Climatizaci%C3%B3n%20en%20MDTV%2B%20y%20quiero%20cotizar",
+      "cta": "Venta, mantención y reparación de aire acondicionado. Cotiza hoy.",
+      "whatsapp": "https://wa.me/56962397613?text=Hola%2C%20vi%20MD%20Climatizaci%C3%B3n%20en%20MDTV%2B%20y%20quiero%20cotizar",
+      "logo_url": "assets/img/sponsor-md-climatizacion.jpg",
       "tier": "presenter"
     },
     {
       "name": "Ilustre Municipalidad de Vallenar",
       "category": "Auspiciador Gold",
       "cta": "Apoyando el deporte local de Atacama.",
-      "whatsapp": "https://wa.me/56900000000?text=Hola%2C%20vi%20a%20la%20Municipalidad%20de%20Vallenar%20en%20MDTV%2B",
+      "whatsapp": "https://wa.me/56962397613?text=Hola%2C%20vi%20a%20la%20Municipalidad%20de%20Vallenar%20en%20MDTV%2B",
       "tier": "gold"
     },
     {
       "name": "Comercial Atacama",
       "category": "Auspiciador Gold",
       "cta": "Todo para tu negocio y tu familia en la Región.",
-      "whatsapp": "https://wa.me/56900000000?text=Hola%2C%20vi%20Comercial%20Atacama%20en%20MDTV%2B",
+      "whatsapp": "https://wa.me/56962397613?text=Hola%2C%20vi%20Comercial%20Atacama%20en%20MDTV%2B",
       "tier": "gold"
     },
     {
       "name": "Espacio Disponible",
       "category": "Anuncia Aquí",
       "cta": "Tu marca puede aparecer aquí ante miles de hinchas.",
-      "whatsapp": "https://wa.me/56900000000?text=Hola%20MDTV%2B%2C%20quiero%20anunciar%20mi%20marca%20en%20las%20transmisiones%20en%20vivo",
+      "whatsapp": "https://wa.me/56962397613?text=Hola%20MDTV%2B%2C%20quiero%20anunciar%20mi%20marca%20en%20las%20transmisiones%20en%20vivo",
       "tier": "available"
     }
   ],

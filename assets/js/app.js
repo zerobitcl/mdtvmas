@@ -14,8 +14,14 @@
     channel_info: {
       name: "MDTV+",
       tagline: "La Señal Oficial del Deporte en Atacama",
-      whatsapp: "+56900000000",
+      whatsapp: "+56962397613",
+      email_contacto: "contacto@mdtvmas.cl",
+      email_ventas: "ventas@mdtvmas.cl",
       youtube_handle: "@mdtvmas",
+      youtube_url: "https://www.youtube.com/@mdtvmas",
+      youtube_subscribe: "https://www.youtube.com/@mdtvmas?sub_confirmation=1",
+      instagram: "https://www.instagram.com/md.tvmas/",
+      facebook: "https://www.facebook.com/profile.php?id=61561203236561",
       website: "https://mdtvmas.cl",
       region: "Región de Atacama, Chile",
     },
@@ -45,9 +51,10 @@
       {
         name: "MD Climatización",
         category: "Presentador Oficial",
-        cta: "Climatización profesional para tu hogar y empresa. Cotiza hoy.",
+        cta: "Venta, mantención y reparación de aire acondicionado. Cotiza hoy.",
         whatsapp:
-          "https://wa.me/56900000000?text=Hola%2C%20vi%20MD%20Climatizaci%C3%B3n%20en%20MDTV%2B%20y%20quiero%20cotizar",
+          "https://wa.me/56962397613?text=Hola%2C%20vi%20MD%20Climatizaci%C3%B3n%20en%20MDTV%2B%20y%20quiero%20cotizar",
+        logo_url: "assets/img/sponsor-md-climatizacion.jpg",
         tier: "presenter",
       },
       {
@@ -55,7 +62,7 @@
         category: "Auspiciador Gold",
         cta: "Apoyando el deporte local de Atacama.",
         whatsapp:
-          "https://wa.me/56900000000?text=Hola%2C%20vi%20a%20la%20Municipalidad%20de%20Vallenar%20en%20MDTV%2B",
+          "https://wa.me/56962397613?text=Hola%2C%20vi%20a%20la%20Municipalidad%20de%20Vallenar%20en%20MDTV%2B",
         tier: "gold",
       },
       {
@@ -63,7 +70,7 @@
         category: "Auspiciador Gold",
         cta: "Todo para tu negocio y tu familia en la Región.",
         whatsapp:
-          "https://wa.me/56900000000?text=Hola%2C%20vi%20Comercial%20Atacama%20en%20MDTV%2B",
+          "https://wa.me/56962397613?text=Hola%2C%20vi%20Comercial%20Atacama%20en%20MDTV%2B",
         tier: "gold",
       },
       {
@@ -71,7 +78,7 @@
         category: "Anuncia Aquí",
         cta: "Tu marca puede aparecer aquí ante miles de hinchas.",
         whatsapp:
-          "https://wa.me/56900000000?text=Hola%20MDTV%2B%2C%20quiero%20anunciar%20mi%20marca%20en%20las%20transmisiones%20en%20vivo",
+          "https://wa.me/56962397613?text=Hola%20MDTV%2B%2C%20quiero%20anunciar%20mi%20marca%20en%20las%20transmisiones%20en%20vivo",
         tier: "available",
       },
     ],
@@ -153,7 +160,6 @@
     countdownTimer: null,
     syncTimer: null,
     activeYoutubeId: null,
-    demoOverride: false,
   };
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -219,6 +225,77 @@
     } else {
       text.textContent = "PRÓXIMA TRANSMISIÓN";
       dot.classList.add("live-dot--standby");
+    }
+  }
+
+  function waDigits(raw) {
+    const fromUrl = String(raw || "").match(/wa\.me\/(\d+)/);
+    if (fromUrl) return fromUrl[1];
+    return String(raw || "").replace(/\D/g, "") || "56962397613";
+  }
+
+  function formatPhoneLabel(raw) {
+    const digits = waDigits(raw);
+    if (digits.length >= 11 && digits.startsWith("56")) {
+      const local = digits.slice(2); // 9XXXXXXXX
+      if (local.length === 9 && local.startsWith("9")) {
+        return `+56 9 ${local.slice(1, 5)} ${local.slice(5)}`;
+      }
+      return `+${digits}`;
+    }
+    return digits ? `+${digits}` : "Contacto";
+  }
+
+  function applyChannelLinks() {
+    const info = state.config?.channel_info || {};
+    const wa = waDigits(info.whatsapp);
+    const ytSub =
+      info.youtube_subscribe ||
+      "https://www.youtube.com/@mdtvmas?sub_confirmation=1";
+    const ig = info.instagram || "https://www.instagram.com/md.tvmas/";
+    const fb =
+      info.facebook ||
+      "https://www.facebook.com/profile.php?id=61561203236561";
+    const mailC = info.email_contacto || "contacto@mdtvmas.cl";
+    const mailV = info.email_ventas || "ventas@mdtvmas.cl";
+    const phoneDisplay = `+${wa.replace(/^56/, "56 ").replace(/^56 9/, "56 9 ")}`;
+
+    $$('[data-social="youtube-sub"]').forEach((el) => {
+      el.href = ytSub;
+    });
+    $$('[data-social="instagram"]').forEach((el) => {
+      el.href = ig;
+    });
+    $$('[data-social="facebook"]').forEach((el) => {
+      el.href = fb;
+    });
+    $$('[data-social="whatsapp"]').forEach((el) => {
+      el.href = `https://wa.me/${wa}`;
+    });
+
+    const comercial = $("#comercial-wa");
+    if (comercial) {
+      comercial.href = `https://wa.me/${wa}?text=${encodeURIComponent(
+        "Hola MDTV+, quiero cotizar publicidad en las transmisiones"
+      )}`;
+    }
+
+    const phoneEl = $('[data-contact="phone"]');
+    if (phoneEl) {
+      phoneEl.href = `tel:+${wa}`;
+      phoneEl.textContent = phoneDisplay.includes("9")
+        ? `+56 9 ${wa.slice(-8).replace(/(\d{4})(\d{4})/, "$1 $2")}`
+        : `+${wa}`;
+    }
+    const mailCEl = $('[data-contact="email-contacto"]');
+    if (mailCEl) {
+      mailCEl.href = `mailto:${mailC}`;
+      mailCEl.textContent = mailC;
+    }
+    const mailVEl = $('[data-contact="email-ventas"]');
+    if (mailVEl) {
+      mailVEl.href = `mailto:${mailV}`;
+      mailVEl.textContent = mailV;
     }
   }
 
@@ -459,7 +536,7 @@
         <p class="ficha__sponsor-label">${escapeHtml(presenter.category)}</p>
         <p class="ficha__sponsor-name">${escapeHtml(presenter.name)}</p>
         <p class="ficha__sponsor-cta">${escapeHtml(presenter.cta)}</p>
-        <a class="btn btn--primary btn--sm" href="${escapeAttr(presenter.whatsapp)}" target="_blank" rel="noopener noreferrer">Contactar Sponsor</a>
+        <a class="btn btn--primary btn--sm" href="${escapeAttr(presenter.whatsapp)}" target="_blank" rel="noopener noreferrer">Contacto · ${escapeHtml(formatPhoneLabel(presenter.whatsapp))}</a>
       </div>
     `;
   }
@@ -488,7 +565,7 @@
             <h3 class="sponsor-card__name">${escapeHtml(s.name)}</h3>
             <p class="sponsor-card__cta">${escapeHtml(s.cta)}</p>
             <a class="sponsor-card__link" href="${escapeAttr(s.whatsapp)}" target="_blank" rel="noopener noreferrer">
-              Hablar por WhatsApp →
+              Contacto · ${escapeHtml(formatPhoneLabel(s.whatsapp))} →
             </a>
           </article>
         `;
@@ -507,14 +584,10 @@
   function renderUpcoming() {
     const grid = $("#upcoming-grid");
     if (!grid) return;
-    const wa = state.config.channel_info.whatsapp.replace(/\D/g, "");
 
     grid.innerHTML = state.config.upcoming_matches
       .map((m) => {
         const { day, month } = formatTicketDate(m.iso || m.date);
-        const remindText = encodeURIComponent(
-          `Hola MDTV+, quiero que me avisen cuando empiece ${m.home} vs ${m.away}`
-        );
         return `
           <article class="ticket">
             <div class="ticket__date">
@@ -526,9 +599,6 @@
               <h3 class="ticket__match">${escapeHtml(m.home)} vs ${escapeHtml(m.away)}</h3>
               <p class="ticket__meta">${escapeHtml(m.tournament)}</p>
               <p class="ticket__meta">${escapeHtml(m.stadium)}</p>
-              <a class="ticket__btn" href="https://wa.me/${wa}?text=${remindText}" target="_blank" rel="noopener noreferrer">
-                Agendar / Recordar
-              </a>
             </div>
           </article>
         `;
@@ -575,30 +645,6 @@
   /* ------------------------------------------------------------------
    * Interactions
    * ------------------------------------------------------------------ */
-  function toggleLiveMode() {
-    state.isLive = !state.isLive;
-    state.demoOverride = true;
-    state.watchingReplay = false;
-    state.replayTitle = "";
-
-    const btn = $("#btn-toggle-live");
-    if (btn) {
-      btn.setAttribute("aria-pressed", String(state.isLive));
-      btn.classList.toggle("is-preview", !state.isLive);
-      const label = btn.querySelector(".btn__label");
-      if (label) {
-        label.textContent = state.isLive
-          ? "Modo Demo: Alternar En Vivo / Previa"
-          : "Modo Demo: Ver En Vivo (actual: Previa)";
-      }
-    }
-
-    renderTicker();
-    renderScorebug();
-    renderPlayer({ forceRemount: true });
-    renderFicha();
-  }
-
   function toggleTheater() {
     state.theaterMode = !state.theaterMode;
     const grid = $("#broadcast-grid");
@@ -637,12 +683,6 @@
     state.replayTitle = vod.title;
     state.isLive = false;
 
-    const demoBtn = $("#btn-toggle-live");
-    if (demoBtn) {
-      demoBtn.setAttribute("aria-pressed", "false");
-      demoBtn.classList.add("is-preview");
-    }
-
     // force:true — si el VOD usa el mismo ID que la señal en vivo, igual remonta con autoplay
     renderLivePlayer(vod.youtube_id, { autoplay: 1, force: true });
     $("#replay-banner").hidden = false;
@@ -656,16 +696,7 @@
   function exitReplay() {
     state.watchingReplay = false;
     state.replayTitle = "";
-    state.demoOverride = false;
     state.isLive = Boolean(state.config.live_stream.is_live);
-
-    const demoBtn = $("#btn-toggle-live");
-    if (demoBtn) {
-      demoBtn.setAttribute("aria-pressed", String(state.isLive));
-      demoBtn.classList.toggle("is-preview", !state.isLive);
-      const label = demoBtn.querySelector(".btn__label");
-      if (label) label.textContent = "Modo Demo: Alternar En Vivo / Previa";
-    }
 
     renderTicker();
     renderScorebug();
@@ -744,7 +775,7 @@
 
     state.config = remote;
 
-    if (!state.demoOverride && !state.watchingReplay) {
+    if (!state.watchingReplay) {
       state.isLive = nowLive;
     }
 
@@ -756,12 +787,6 @@
 
     if (state.watchingReplay) {
       // Hincha viendo VOD: no cortar el video; solo marcador/ficha ya actualizados
-    } else if (state.demoOverride) {
-      // Demo local manda sobre is_live remoto hasta que se desactive
-      if (youtubeChanged && state.isLive) {
-        renderLivePlayer(next.youtube_id, { autoplay: 0, force: true });
-        updateChatFrame();
-      }
     } else if (wentLive || (nowLive && youtubeChanged)) {
       renderPlayer({ forceRemount: youtubeChanged || wentLive });
     } else if (wentStandby) {
@@ -774,12 +799,7 @@
     if (sponsorsChanged) renderSponsors();
     if (upcomingChanged) renderUpcoming();
     if (vodChanged) renderVod();
-
-    const demoBtn = $("#btn-toggle-live");
-    if (demoBtn && !state.demoOverride && !state.watchingReplay) {
-      demoBtn.setAttribute("aria-pressed", String(state.isLive));
-      demoBtn.classList.toggle("is-preview", !state.isLive);
-    }
+    if (channelChanged) applyChannelLinks();
   }
 
   async function pollRemoteConfig() {
@@ -853,7 +873,6 @@
   }
 
   function bindEvents() {
-    $("#btn-toggle-live")?.addEventListener("click", toggleLiveMode);
     $("#btn-theater")?.addEventListener("click", toggleTheater);
     $("#btn-toggle-chat")?.addEventListener("click", toggleChat);
     $("#btn-share-wa")?.addEventListener("click", shareWhatsApp);
@@ -888,42 +907,15 @@
   /* ------------------------------------------------------------------
    * Boot
    * ------------------------------------------------------------------ */
-  function isPresentationDemoEnabled() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("demo") === "1") return true;
-    } catch {
-      /* ignore */
-    }
-    const host = (window.location.hostname || "").toLowerCase();
-    return (
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host === "0.0.0.0" ||
-      host === "[::1]"
-    );
-  }
-
-  function setupDemoButtonVisibility() {
-    const demoBtn = $("#btn-toggle-live");
-    if (!demoBtn) return;
-    const enabled = isPresentationDemoEnabled();
-    demoBtn.hidden = !enabled;
-    if (enabled) {
-      demoBtn.setAttribute("aria-pressed", String(state.isLive));
-      demoBtn.classList.toggle("is-preview", !state.isLive);
-    }
-  }
-
   async function init() {
     const year = $("#year");
     if (year) year.textContent = String(new Date().getFullYear());
 
     state.config = await loadConfig();
     state.isLive = Boolean(state.config.live_stream.is_live);
-    state.demoOverride = false;
 
     renderTicker();
+    applyChannelLinks();
     renderScorebug();
     renderPlayer({ forceRemount: true });
     renderFicha();
@@ -932,7 +924,6 @@
     renderVod();
     bindEvents();
     startLiveSync();
-    setupDemoButtonVisibility();
   }
 
   if (document.readyState === "loading") {
