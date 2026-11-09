@@ -223,8 +223,9 @@ function extract_youtube_id(string $input): string
         return $input;
     }
     $patterns = [
-        '/(?:youtube\.com\/watch\?[^#]*v=|youtu\.be\/|youtube\.com\/live\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/',
+        '/(?:youtube\.com\/watch\?[^#]*v=|m\.youtube\.com\/watch\?[^#]*v=|youtu\.be\/|youtube\.com\/live\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/',
         '/[?&]v=([a-zA-Z0-9_-]{11})/',
+        '/youtu\.be\/([a-zA-Z0-9_-]{11})/',
     ];
     foreach ($patterns as $pattern) {
         if (preg_match($pattern, $input, $m)) {
@@ -470,19 +471,27 @@ function merge_incoming_config(array $base, array $incoming): array
     }
 
     if (isset($incoming['vod_matches']) && is_array($incoming['vod_matches'])) {
+        $prevVods = is_array($base['vod_matches'] ?? null) ? $base['vod_matches'] : [];
         $vods = [];
-        foreach ($incoming['vod_matches'] as $v) {
+        foreach ($incoming['vod_matches'] as $idx => $v) {
             if (!is_array($v)) {
                 continue;
             }
             $title = trim((string)($v['title'] ?? ''));
-            $ytRaw = (string)($v['youtube_url'] ?? $v['youtube_id'] ?? '');
+            if ($title === '') {
+                continue;
+            }
+            $ytRaw = trim((string)($v['youtube_url'] ?? $v['youtube_id'] ?? ''));
             $ytId  = extract_youtube_id($ytRaw);
-            if ($title === '' || $ytId === '') {
+            // Si el link nuevo no se pudo leer, conservar el ID anterior (no borrar el partido)
+            if ($ytId === '' && !empty($prevVods[$idx]['youtube_id'])) {
+                $ytId = extract_youtube_id((string)$prevVods[$idx]['youtube_id']);
+            }
+            if ($ytId === '') {
                 continue;
             }
             $thumb = trim((string)($v['thumbnail'] ?? ''));
-            if ($thumb === '') {
+            if ($thumb === '' || str_contains($thumb, 'unsplash.com') || str_contains($thumb, '/vi/')) {
                 $thumb = 'https://i.ytimg.com/vi/' . $ytId . '/hqdefault.jpg';
             }
             $vods[] = [
@@ -1251,8 +1260,9 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
       if (!raw) return "";
       if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) return raw;
       const patterns = [
-        /(?:youtube\.com\/watch\?[^#]*v=|youtu\.be\/|youtube\.com\/live\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+        /(?:youtube\.com\/watch\?[^#]*v=|youtu\.be\/|youtube\.com\/live\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube\.com\/v\/|m\.youtube\.com\/watch\?[^#]*v=)([a-zA-Z0-9_-]{11})/,
         /[?&]v=([a-zA-Z0-9_-]{11})/,
+        /youtu\.be\/([a-zA-Z0-9_-]{11})/,
       ];
       for (const re of patterns) {
         const m = raw.match(re);
@@ -1535,7 +1545,7 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
             </div>
             <div class="field">
               <label>Link de YouTube</label>
-              <input type="url" data-f="youtube_url" value="${esc(url)}" placeholder="https://youtu.be/...">
+              <input type="text" data-f="youtube_url" value="${esc(url)}" placeholder="Pega el link completo de YouTube" inputmode="url" autocomplete="off">
             </div>
             <div class="row-2">
               <div class="field">
@@ -1661,6 +1671,15 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
           btn.textContent = "Guardar y Publicar en Vivo";
           return;
         }
+        const badVod = (payload.vod_matches || []).find(
+          (v) => v.title && !v.youtube_id && String(v.youtube_url || "").trim()
+        );
+        if (badVod) {
+          showToast("Hay un link de YouTube inválido en Archivo VOD: " + badVod.title, true);
+          btn.disabled = false;
+          btn.textContent = "Guardar y Publicar en Vivo";
+          return;
+        }
         const res = await fetch("admin.php?action=save", {
           method: "POST",
           headers: {
@@ -1678,8 +1697,16 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
         }
         showToast("✅ ¡Señal actualizada en vivo en mdtvmas.cl!");
         if (data.config) {
-          // keep NEXT_LOCAL in sync for next open — hydrate soft fields only if needed
           state.youtubeId = data.config.live_stream?.youtube_id || state.youtubeId;
+          // Rehidratar VOD/cartelera para confirmar lo que realmente quedó guardado
+          if (Array.isArray(data.config.vod_matches)) {
+            state.vods = data.config.vod_matches.map((v) => ({ ...v }));
+            renderVods();
+          }
+          if (Array.isArray(data.config.upcoming_matches)) {
+            state.upcoming = data.config.upcoming_matches.map((m) => ({ ...m }));
+            renderUpcoming();
+          }
         }
       } catch (err) {
         showToast("❌ " + (err.message || "No se pudo guardar"), true);
