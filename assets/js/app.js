@@ -643,7 +643,8 @@
       demoBtn.classList.add("is-preview");
     }
 
-    renderLivePlayer(vod.youtube_id, { autoplay: 1 });
+    // force:true — si el VOD usa el mismo ID que la señal en vivo, igual remonta con autoplay
+    renderLivePlayer(vod.youtube_id, { autoplay: 1, force: true });
     $("#replay-banner").hidden = false;
     $("#replay-title").textContent = vod.title;
     renderTicker();

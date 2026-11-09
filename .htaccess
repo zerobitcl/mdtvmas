@@ -4,6 +4,14 @@
 Options -Indexes
 ServerSignature Off
 
+# ---------- Baseline security headers (sitio completo) ----------
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
 # ---------- Never cache live signal JSON ----------
 <IfModule mod_headers.c>
   <FilesMatch "\.json$">

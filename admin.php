@@ -1,19 +1,63 @@
 <?php
 /**
  * MDTV+ STUDIO — Cabina de Control del Director
- * PHP 8+ nativo · Sesión · Escribe data/config.json
+ * PHP 8+ nativo · Sesión endurecida · CSRF · Rate-limit · Escribe data/config.json
  */
 
 declare(strict_types=1);
 
+/* ========== Sesión endurecida (antes de session_start) ========== */
+$mdtvHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || ((int)($_SERVER['SERVER_PORT'] ?? 0) === 443)
+    || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+
+ini_set('session.use_strict_mode', '1');
+ini_set('session.use_only_cookies', '1');
+ini_set('session.cookie_httponly', '1');
+ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.use_trans_sid', '0');
+if ($mdtvHttps) {
+    ini_set('session.cookie_secure', '1');
+}
+
+session_name('MDTVSTUDIO');
 session_start();
 
 /* ========== CONFIGURACIÓN MAESTRA ========== */
-const ADMIN_PASSWORD = 'mdtv2026';
-const CONFIG_PATH    = __DIR__ . '/data/config.json';
-const SESSION_KEY    = 'mdtv_studio_auth';
+// Hash bcrypt de la clave actual. Para cambiarla: password_hash('NUEVA', PASSWORD_DEFAULT)
+const ADMIN_PASSWORD_HASH = '$2y$12$WOD0KhUSH4X6NVpcZD2RjegnzmOvFFpF6/OCK5RgAUf2Rjmha3tJe';
+const CONFIG_PATH         = __DIR__ . '/data/config.json';
+const RATE_LIMIT_PATH     = __DIR__ . '/data/login_attempts.json';
+const SESSION_KEY         = 'mdtv_studio_auth';
+const CSRF_KEY            = 'mdtv_studio_csrf';
+const SESSION_TS_KEY      = 'mdtv_studio_auth_at';
+const MAX_LOGIN_ATTEMPTS  = 5;
+const LOCKOUT_SECONDS     = 900;  // 15 min
+const SESSION_IDLE_SECONDS = 7200; // 2 h
 
 /* ---------- Helpers ---------- */
+
+function send_security_headers(): void
+{
+    header('X-Frame-Options: DENY');
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: no-referrer');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    header(
+        "Content-Security-Policy: default-src 'self'; "
+        . "img-src 'self' data: https://i.ytimg.com; "
+        . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        . "font-src https://fonts.gstatic.com; "
+        . "script-src 'self' 'unsafe-inline'; "
+        . "connect-src 'self'; "
+        . "frame-ancestors 'none'; "
+        . "base-uri 'self'; "
+        . "form-action 'self'"
+    );
+}
+
+send_security_headers();
 
 function json_response(array $payload, int $code = 200): void
 {
@@ -22,6 +66,151 @@ function json_response(array $payload, int $code = 200): void
     header('Cache-Control: no-store');
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
+}
+
+function client_ip(): string
+{
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
+}
+
+function load_rate_limit(): array
+{
+    if (!is_file(RATE_LIMIT_PATH)) {
+        return [];
+    }
+    $data = json_decode((string)file_get_contents(RATE_LIMIT_PATH), true);
+    return is_array($data) ? $data : [];
+}
+
+function save_rate_limit(array $data): void
+{
+    $dir = dirname(RATE_LIMIT_PATH);
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+    $tmp = RATE_LIMIT_PATH . '.tmp';
+    if (file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT) . "\n", LOCK_EX) === false) {
+        return;
+    }
+    rename($tmp, RATE_LIMIT_PATH);
+}
+
+function login_lock_status(): array
+{
+    $ip = client_ip();
+    $store = load_rate_limit();
+    $entry = $store[$ip] ?? ['fails' => 0, 'locked_until' => 0, 'window_start' => 0];
+    $now = time();
+    $lockedUntil = (int)($entry['locked_until'] ?? 0);
+
+    if ($lockedUntil > $now) {
+        return [
+            'locked'    => true,
+            'remaining' => $lockedUntil - $now,
+            'fails'     => (int)($entry['fails'] ?? 0),
+        ];
+    }
+
+    $windowStart = (int)($entry['window_start'] ?? 0);
+    if ($windowStart > 0 && ($now - $windowStart) > LOCKOUT_SECONDS) {
+        return ['locked' => false, 'remaining' => 0, 'fails' => 0];
+    }
+
+    return [
+        'locked'    => false,
+        'remaining' => 0,
+        'fails'     => (int)($entry['fails'] ?? 0),
+    ];
+}
+
+function register_login_failure(): array
+{
+    $ip = client_ip();
+    $store = load_rate_limit();
+    $now = time();
+    $entry = $store[$ip] ?? ['fails' => 0, 'window_start' => $now, 'locked_until' => 0];
+
+    if ((int)($entry['locked_until'] ?? 0) > $now) {
+        return login_lock_status();
+    }
+
+    if (($now - (int)($entry['window_start'] ?? $now)) > LOCKOUT_SECONDS) {
+        $entry = ['fails' => 0, 'window_start' => $now, 'locked_until' => 0];
+    }
+    if ((int)($entry['window_start'] ?? 0) === 0) {
+        $entry['window_start'] = $now;
+    }
+
+    $entry['fails'] = (int)$entry['fails'] + 1;
+    if ($entry['fails'] >= MAX_LOGIN_ATTEMPTS) {
+        $entry['locked_until'] = $now + LOCKOUT_SECONDS;
+    }
+
+    $store[$ip] = $entry;
+
+    foreach ($store as $k => $v) {
+        $lu = (int)($v['locked_until'] ?? 0);
+        $ws = (int)($v['window_start'] ?? 0);
+        if ($lu < $now && ($now - $ws) > (LOCKOUT_SECONDS * 2)) {
+            unset($store[$k]);
+        }
+    }
+
+    save_rate_limit($store);
+    return login_lock_status();
+}
+
+function clear_login_failures(): void
+{
+    $ip = client_ip();
+    $store = load_rate_limit();
+    if (isset($store[$ip])) {
+        unset($store[$ip]);
+        save_rate_limit($store);
+    }
+}
+
+function csrf_token(): string
+{
+    if (empty($_SESSION[CSRF_KEY]) || !is_string($_SESSION[CSRF_KEY])) {
+        $_SESSION[CSRF_KEY] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION[CSRF_KEY];
+}
+
+function verify_csrf(?string $token): bool
+{
+    $session = $_SESSION[CSRF_KEY] ?? '';
+    return is_string($session)
+        && $session !== ''
+        && is_string($token)
+        && $token !== ''
+        && hash_equals($session, $token);
+}
+
+function request_csrf_token(): ?string
+{
+    $header = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    if (is_string($header) && $header !== '') {
+        return $header;
+    }
+    if (isset($_POST['csrf_token'])) {
+        return (string)$_POST['csrf_token'];
+    }
+    return null;
+}
+
+function require_csrf_or_fail(bool $asJson = true): void
+{
+    if (verify_csrf(request_csrf_token())) {
+        return;
+    }
+    if ($asJson) {
+        json_response(['ok' => false, 'error' => 'Token de seguridad inválido. Recarga la página.'], 403);
+    }
+    http_response_code(403);
+    exit('Forbidden');
 }
 
 function extract_youtube_id(string $input): string
@@ -77,7 +266,16 @@ function save_config(array $config): bool
 
 function is_authenticated(): bool
 {
-    return !empty($_SESSION[SESSION_KEY]);
+    if (empty($_SESSION[SESSION_KEY])) {
+        return false;
+    }
+    $ts = (int)($_SESSION[SESSION_TS_KEY] ?? 0);
+    if ($ts > 0 && (time() - $ts) > SESSION_IDLE_SECONDS) {
+        $_SESSION = [];
+        return false;
+    }
+    $_SESSION[SESSION_TS_KEY] = time();
+    return true;
 }
 
 function normalize_whatsapp_link(string $value): string
@@ -289,8 +487,11 @@ function merge_incoming_config(array $base, array $incoming): array
 /* ---------- Request handlers ---------- */
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
+$loginError = '';
+$lockStatus = login_lock_status();
 
-if ($action === 'logout') {
+if ($action === 'logout' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_csrf_or_fail(false);
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
         $p = session_get_cookie_params();
@@ -302,19 +503,38 @@ if ($action === 'logout') {
 }
 
 if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $pass = (string)($_POST['password'] ?? '');
-    if (hash_equals(ADMIN_PASSWORD, $pass)) {
-        $_SESSION[SESSION_KEY] = true;
-        header('Location: admin.php');
-        exit;
+    if (!verify_csrf(request_csrf_token())) {
+        $loginError = 'Sesión inválida. Recarga la página e intenta de nuevo.';
+    } elseif ($lockStatus['locked']) {
+        $mins = max(1, (int)ceil($lockStatus['remaining'] / 60));
+        $loginError = "Demasiados intentos fallidos. Espera {$mins} minuto(s) e intenta de nuevo.";
+    } else {
+        $pass = (string)($_POST['password'] ?? '');
+        if ($pass !== '' && password_verify($pass, ADMIN_PASSWORD_HASH)) {
+            session_regenerate_id(true);
+            $_SESSION[SESSION_KEY] = true;
+            $_SESSION[SESSION_TS_KEY] = time();
+            $_SESSION[CSRF_KEY] = bin2hex(random_bytes(32));
+            clear_login_failures();
+            header('Location: admin.php');
+            exit;
+        }
+        $lockStatus = register_login_failure();
+        if ($lockStatus['locked']) {
+            $mins = max(1, (int)ceil($lockStatus['remaining'] / 60));
+            $loginError = "Demasiados intentos. Acceso bloqueado por {$mins} minuto(s).";
+        } else {
+            $left = max(0, MAX_LOGIN_ATTEMPTS - (int)$lockStatus['fails']);
+            $loginError = "Contraseña incorrecta. Te quedan {$left} intento(s).";
+        }
     }
-    $loginError = 'Contraseña incorrecta';
 }
 
 if ($action === 'save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!is_authenticated()) {
         json_response(['ok' => false, 'error' => 'No autorizado'], 401);
     }
+    require_csrf_or_fail(true);
     $rawBody = file_get_contents('php://input');
     $payload = json_decode($rawBody ?: '{}', true);
     if (!is_array($payload)) {
@@ -335,6 +555,7 @@ if ($action === 'upload_sponsor_logo' && $_SERVER['REQUEST_METHOD'] === 'POST') 
     if (!is_authenticated()) {
         json_response(['ok' => false, 'error' => 'No autorizado'], 401);
     }
+    require_csrf_or_fail(true);
 
     if (empty($_FILES['logo']) || !is_array($_FILES['logo'])) {
         json_response(['ok' => false, 'error' => 'No se recibió ninguna imagen'], 400);
@@ -395,7 +616,10 @@ if ($action === 'config' && is_authenticated()) {
 
 $config = load_config();
 $loggedIn = is_authenticated();
+$csrf = csrf_token();
+$lockStatus = login_lock_status();
 $configJson = json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS);
+$csrfJson = json_encode($csrf, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_iso'] ?? ''));
 ?>
 <!DOCTYPE html>
@@ -764,18 +988,21 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
 
 <?php if (!$loggedIn): ?>
   <div class="login">
-    <form class="login__card" method="post" action="admin.php">
+    <form class="login__card" method="post" action="admin.php" autocomplete="off">
       <input type="hidden" name="action" value="login">
+      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
       <div class="login__brand">MDTV<span>+</span> STUDIO</div>
       <p class="login__sub">Cabina de control del director · Acceso restringido</p>
       <?php if (!empty($loginError)): ?>
         <div class="login__error"><?= htmlspecialchars($loginError, ENT_QUOTES, 'UTF-8') ?></div>
+      <?php elseif (!empty($lockStatus['locked'])): ?>
+        <div class="login__error">Acceso temporalmente bloqueado por intentos fallidos. Espera <?= (int)max(1, (int)ceil(((int)$lockStatus['remaining']) / 60)) ?> minuto(s).</div>
       <?php endif; ?>
       <div class="field">
         <label for="password">Contraseña maestra</label>
-        <input type="password" id="password" name="password" required autofocus autocomplete="current-password" placeholder="••••••••">
+        <input type="password" id="password" name="password" required autofocus autocomplete="current-password" placeholder="••••••••" <?= !empty($lockStatus['locked']) ? 'disabled' : '' ?>>
       </div>
-      <button type="submit" class="btn-primary">Entrar a la Cabina</button>
+      <button type="submit" class="btn-primary" <?= !empty($lockStatus['locked']) ? 'disabled' : '' ?>>Entrar a la Cabina</button>
     </form>
   </div>
 <?php else: ?>
@@ -787,7 +1014,11 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
     </div>
     <div class="topbar__actions">
       <a class="btn-ghost" href="index.html" target="_blank" rel="noopener">Ver Web ↗</a>
-      <a class="btn-ghost" href="admin.php?action=logout">Salir</a>
+      <form method="post" action="admin.php" style="display:inline;margin:0">
+        <input type="hidden" name="action" value="logout">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+        <button type="submit" class="btn-ghost">Salir</button>
+      </form>
     </div>
   </header>
 
@@ -949,6 +1180,7 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
     "use strict";
 
     const INITIAL = <?= $configJson ?: '{}' ?>;
+    const CSRF = <?= $csrfJson ?: '""' ?>;
     const NEXT_LOCAL = <?= json_encode($nextLocal, JSON_UNESCAPED_UNICODE) ?>;
 
     const state = {
@@ -1131,9 +1363,11 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
       try {
         const fd = new FormData();
         fd.append("action", "upload_sponsor_logo");
+        fd.append("csrf_token", CSRF);
         fd.append("logo", file);
         const res = await fetch("admin.php?action=upload_sponsor_logo", {
           method: "POST",
+          headers: { "X-CSRF-Token": CSRF },
           body: fd,
           credentials: "same-origin",
           cache: "no-store",
@@ -1369,7 +1603,11 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
         }
         const res = await fetch("admin.php?action=save", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "X-CSRF-Token": CSRF,
+          },
           body: JSON.stringify(payload),
           credentials: "same-origin",
           cache: "no-store",

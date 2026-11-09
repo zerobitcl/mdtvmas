@@ -1,0 +1,19 @@
+# Solo config.json es público (señal en vivo para la web).
+# Bloquea intentos de login, temporales y cualquier otro archivo en /data.
+Options -Indexes
+
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Deny from all
+</IfModule>
+
+<Files "config.json">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Allow from all
+  </IfModule>
+</Files>
