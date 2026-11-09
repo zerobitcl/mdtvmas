@@ -15,6 +15,7 @@
   },
   "live_stream": {
     "is_live": true,
+    "season_paused": false,
     "youtube_id": "jfKfPfyJRdk",
     "match_title": "Deportes Vallenar vs Municipal Mejillones",
     "tournament": "Tercera División B - Grupo Norte | Fecha 14",

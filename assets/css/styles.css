@@ -748,6 +748,33 @@ h3 {
   color: var(--text-muted);
 }
 
+.standby--paused {
+  gap: 16px;
+}
+
+.standby__copy {
+  max-width: 36ch;
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.standby__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.scorebug--paused {
+  opacity: 0.92;
+}
+
+.ticket--empty {
+  grid-template-columns: 1fr;
+}
+
 .countdown {
   display: grid;
   grid-template-columns: repeat(4, minmax(56px, 72px));

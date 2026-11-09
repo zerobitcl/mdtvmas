@@ -27,6 +27,7 @@
     },
     live_stream: {
       is_live: true,
+      season_paused: false,
       youtube_id: "jfKfPfyJRdk",
       match_title: "Deportes Vallenar vs Municipal Mejillones",
       tournament: "Tercera División B - Grupo Norte | Fecha 14",
@@ -223,18 +224,25 @@
   /* ------------------------------------------------------------------
    * Render: ticker + scorebug + hero meta
    * ------------------------------------------------------------------ */
+  function isSeasonPaused() {
+    return Boolean(state.config?.live_stream?.season_paused);
+  }
+
   function renderTicker() {
     const status = $("#ticker-status");
     if (!status) return;
     const text = status.querySelector(".ticker__status-text");
     const dot = status.querySelector(".live-dot");
 
-    if (state.isLive && !state.watchingReplay) {
-      text.textContent = "SEÑAL EN VIVO";
-      dot.classList.remove("live-dot--standby");
-    } else if (state.watchingReplay) {
+    if (state.watchingReplay) {
       text.textContent = "VIENDO REPETICIÓN";
       dot.classList.add("live-dot--standby");
+    } else if (isSeasonPaused()) {
+      text.textContent = "TEMPORADA EN PAUSA";
+      dot.classList.add("live-dot--standby");
+    } else if (state.isLive) {
+      text.textContent = "SEÑAL EN VIVO";
+      dot.classList.remove("live-dot--standby");
     } else {
       text.textContent = "PRÓXIMA TRANSMISIÓN";
       dot.classList.add("live-dot--standby");
@@ -348,6 +356,28 @@
     const ls = state.config.live_stream;
     const home = ls.home_team;
     const away = ls.away_team;
+    const paused = isSeasonPaused();
+    const scorebug = $("#scorebug");
+
+    if (scorebug) scorebug.classList.toggle("scorebug--paused", paused);
+
+    if (paused) {
+      $("#tournament-badge").textContent = "MDTV+";
+      $("#match-title").textContent = "Pronto volvemos con más fútbol en vivo";
+      $("#home-crest").textContent = "MD";
+      $("#away-crest").textContent = "TV";
+      $("#home-crest").style.setProperty("--team-color", "#E63946");
+      $("#away-crest").style.setProperty("--team-color", "#00E676");
+      $("#home-name").textContent = "Señal oficial";
+      $("#away-name").textContent = "Atacama";
+      $("#home-score").textContent = "–";
+      $("#away-score").textContent = "–";
+      $("#match-stadium").textContent = "Sin transmisiones programadas por ahora";
+      const badge = $("#match-badge");
+      badge.textContent = "TEMPORADA EN PAUSA";
+      badge.classList.add("is-upcoming");
+      return;
+    }
 
     $("#match-title").textContent = ls.match_title;
     $("#tournament-badge").textContent = ls.tournament;
@@ -432,7 +462,31 @@
     }
   }
 
+  function renderOffseason() {
+    clearCountdown();
+    const wrap = $("#player-wrap");
+    wrap.innerHTML = `
+      <div class="standby standby--paused" role="status" aria-live="polite">
+        <p class="standby__label">
+          <span class="live-dot live-dot--standby" aria-hidden="true"></span>
+          Temporada en pausa
+        </p>
+        <p class="standby__title">No hay transmisiones programadas por ahora</p>
+        <p class="standby__copy">Cuando vuelva el fútbol a la cancha, MDTV+ estará al aire. Mientras tanto revive partidos o síguenos en redes.</p>
+        <div class="standby__actions">
+          <a class="btn btn--subscribe btn--sm" href="#archivo">Ver archivo</a>
+          <a class="btn btn--social btn--sm" href="#comunidad">Síguenos</a>
+        </div>
+      </div>
+    `;
+  }
+
   function renderStandby() {
+    if (isSeasonPaused()) {
+      renderOffseason();
+      return;
+    }
+
     const ls = state.config.live_stream;
     const home = ls.home_team;
     const away = ls.away_team;
@@ -513,7 +567,7 @@
 
     banner.hidden = true;
 
-    if (state.isLive) {
+    if (state.isLive && !isSeasonPaused()) {
       renderLivePlayer(ls.youtube_id, { autoplay: 0, force: forceRemount });
     } else {
       state.activeYoutubeId = null;
@@ -648,11 +702,35 @@
     const grid = $("#upcoming-grid");
     if (!grid) return;
 
+    const heading = $("#cartelera-heading");
     const matches = [...(state.config.upcoming_matches || [])].sort((a, b) => {
       const af = a.featured ? 1 : 0;
       const bf = b.featured ? 1 : 0;
       return bf - af;
     });
+
+    if (isSeasonPaused() || matches.length === 0) {
+      if (heading) {
+        heading.textContent = isSeasonPaused()
+          ? "Cartelera en pausa"
+          : "Próximas Transmisiones en Vivo";
+      }
+      grid.innerHTML = `
+        <article class="ticket ticket--empty">
+          <div class="ticket__body" style="grid-column:1/-1">
+            <h3 class="ticket__match">${
+              isSeasonPaused()
+                ? "Sin fechas confirmadas por ahora"
+                : "Pronto anunciaremos la próxima transmisión"
+            }</h3>
+            <p class="ticket__meta">Revive partidos en el archivo o síguenos para enterarte primero.</p>
+          </div>
+        </article>
+      `;
+      return;
+    }
+
+    if (heading) heading.textContent = "Próximas Transmisiones en Vivo";
 
     grid.innerHTML = matches
       .map((m) => {
@@ -774,7 +852,8 @@
   function exitReplay() {
     state.watchingReplay = false;
     state.replayTitle = "";
-    state.isLive = Boolean(state.config.live_stream.is_live);
+    state.isLive =
+      !isSeasonPaused() && Boolean(state.config.live_stream.is_live);
 
     renderTicker();
     renderScorebug();
@@ -802,8 +881,9 @@
 
     const prev = state.config.live_stream;
     const next = remote.live_stream;
-    const wasLive = Boolean(prev.is_live);
-    const nowLive = Boolean(next.is_live);
+    const wasLive = Boolean(prev.is_live) && !Boolean(prev.season_paused);
+    const nowLive = Boolean(next.is_live) && !Boolean(next.season_paused);
+    const pauseChanged = Boolean(prev.season_paused) !== Boolean(next.season_paused);
 
     const scoreChanged =
       Number(prev.home_team?.score) !== Number(next.home_team?.score) ||
@@ -811,6 +891,7 @@
 
     const badgeChanged = prev.match_status_badge !== next.match_status_badge;
     const metaChanged =
+      pauseChanged ||
       prev.match_title !== next.match_title ||
       prev.tournament !== next.tournament ||
       prev.stadium !== next.stadium ||
@@ -855,6 +936,11 @@
 
     if (!state.watchingReplay) {
       state.isLive = nowLive;
+    }
+
+    if (pauseChanged && !state.watchingReplay) {
+      renderPlayer({ forceRemount: true });
+      renderUpcoming();
     }
 
     if (scoreChanged || badgeChanged || metaChanged || wentLive || wentStandby) {
@@ -990,7 +1076,9 @@
     if (year) year.textContent = String(new Date().getFullYear());
 
     state.config = await loadConfig();
-    state.isLive = Boolean(state.config.live_stream.is_live);
+    state.isLive =
+      !state.config.live_stream.season_paused &&
+      Boolean(state.config.live_stream.is_live);
 
     renderTicker();
     applyChannelLinks();

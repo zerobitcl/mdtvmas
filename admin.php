@@ -360,8 +360,15 @@ function merge_incoming_config(array $base, array $incoming): array
         $home['score'] = max(0, (int)($home['score'] ?? 0));
         $away['score'] = max(0, (int)($away['score'] ?? 0));
 
+        $isLive = filter_var($lsIn['is_live'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $seasonPaused = filter_var($lsIn['season_paused'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if ($seasonPaused) {
+            $isLive = false;
+        }
+
         $out['live_stream'] = [
-            'is_live'            => filter_var($lsIn['is_live'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'is_live'            => $isLive,
+            'season_paused'      => $seasonPaused,
             'youtube_id'         => $ytId,
             'match_title'        => (string)($lsIn['match_title'] ?? ($lsBase['match_title'] ?? '')),
             'tournament'         => (string)($lsIn['tournament'] ?? ($lsBase['tournament'] ?? '')),
@@ -1104,6 +1111,15 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
               <span class="switch__knob"></span>
             </button>
           </div>
+          <div class="master__row" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+            <div>
+              <div class="master__label" style="font-size:.95rem">⏸️ Temporada en pausa</div>
+              <div class="master__sub">Úsalo cuando no hay partidos por semanas o meses</div>
+            </div>
+            <button type="button" class="switch" id="season-pause-switch" role="switch" aria-checked="false" aria-label="Temporada en pausa">
+              <span class="switch__knob"></span>
+            </button>
+          </div>
 
           <div class="field">
             <label for="youtube-url">Link de YouTube del Partido</label>
@@ -1244,6 +1260,7 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
 
     const state = {
       isLive: true,
+      seasonPaused: false,
       homeScore: 0,
       awayScore: 0,
       youtubeId: "",
@@ -1286,6 +1303,26 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
       const label = $("#master-label");
       const sub = $("#master-sub");
       const sw = $("#is-live-switch");
+      const pauseSw = $("#season-pause-switch");
+
+      if (pauseSw) {
+        pauseSw.classList.toggle("is-on", state.seasonPaused);
+        pauseSw.setAttribute("aria-checked", String(state.seasonPaused));
+      }
+
+      if (state.seasonPaused) {
+        state.isLive = false;
+        pill.className = "status-pill is-previa";
+        text.textContent = "EN PAUSA";
+        label.textContent = "⏸️ TEMPORADA EN PAUSA";
+        sub.textContent = "La web no muestra En Vivo ni Próximo Partido";
+        sw.classList.remove("is-on");
+        sw.setAttribute("aria-checked", "false");
+        sw.disabled = true;
+        return;
+      }
+
+      sw.disabled = false;
       if (state.isLive) {
         pill.className = "status-pill is-live";
         text.textContent = "AL AIRE";
@@ -1587,7 +1624,8 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
       const home = ls.home_team || {};
       const away = ls.away_team || {};
 
-      state.isLive = Boolean(ls.is_live);
+      state.seasonPaused = Boolean(ls.season_paused);
+      state.isLive = state.seasonPaused ? false : Boolean(ls.is_live);
       state.homeScore = Number(home.score) || 0;
       state.awayScore = Number(away.score) || 0;
       state.youtubeId = ls.youtube_id || "";
@@ -1631,7 +1669,8 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
 
       return {
         live_stream: {
-          is_live: state.isLive,
+          is_live: state.seasonPaused ? false : state.isLive,
+          season_paused: state.seasonPaused,
           youtube_url: ytInput,
           youtube_id: ytId,
           match_title: $("#match-title").value.trim(),
@@ -1734,7 +1773,14 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
       });
 
       $("#is-live-switch").addEventListener("click", () => {
+        if (state.seasonPaused) return;
         state.isLive = !state.isLive;
+        updateAirStatus();
+      });
+
+      $("#season-pause-switch").addEventListener("click", () => {
+        state.seasonPaused = !state.seasonPaused;
+        if (state.seasonPaused) state.isLive = false;
         updateAirStatus();
       });
 
