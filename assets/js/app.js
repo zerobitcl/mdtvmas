@@ -79,8 +79,7 @@
         category: "Anuncia Aquí",
         cta: "Tu marca puede aparecer aquí ante miles de hinchas.",
         phone: "",
-        whatsapp:
-          "https://wa.me/56962397613?text=Hola%20MDTV%2B%2C%20quiero%20anunciar%20mi%20marca%20en%20las%20transmisiones%20en%20vivo",
+        whatsapp: "",
         tier: "available",
       },
     ],
@@ -258,17 +257,35 @@
   }
 
   function sponsorContactHref(sponsor) {
-    const wa = String(sponsor?.whatsapp || "").trim();
-    if (wa) return wa;
+    // Espacio publicitario vacío → sección comercial de MDTV+, no WhatsApp de otra marca
+    if (sponsor?.tier === "available") return "#comercial";
+
+    // Solo contacto propio del auspiciador
     const phone = waDigits(sponsor?.phone || "");
-    return phone ? `https://wa.me/${phone}` : "";
+    if (phone) {
+      const msg = encodeURIComponent(
+        `Hola, vi ${sponsor.name || "su marca"} en MDTV+ y quiero contactarlos`
+      );
+      return `https://wa.me/${phone}?text=${msg}`;
+    }
+    const wa = String(sponsor?.whatsapp || "").trim();
+    // Si el WhatsApp es el de la página/MD Climatización y no hay phone propio, no usar
+    const pageWa = waDigits(state.config?.channel_info?.whatsapp || "");
+    if (wa) {
+      const sponsorWa = waDigits(wa);
+      if (pageWa && sponsorWa === pageWa && !String(sponsor?.phone || "").trim()) {
+        return "";
+      }
+      return wa;
+    }
+    return "";
   }
 
   function sponsorContactLabel(sponsor) {
-    // Solo teléfono propio del auspiciador (campo phone). "Espacio disponible" usa otro texto.
-    if (sponsor?.tier === "available") return "Anuncia aquí";
+    if (sponsor?.tier === "available") return "Cotiza tu espacio";
+    // Nunca sacar el número desde un WhatsApp genérico: solo campo phone del auspiciador
     const phone = formatPhoneLabel(sponsor?.phone || "");
-    return phone ? `Contacto · ${phone}` : "Contacto";
+    return phone ? `Contacto · ${phone}` : "";
   }
 
   function applyChannelLinks() {
@@ -562,9 +579,12 @@
         <p class="ficha__sponsor-name">${escapeHtml(presenter.name)}</p>
         <p class="ficha__sponsor-cta">${escapeHtml(presenter.cta)}</p>
         ${
-          sponsorContactHref(presenter)
-            ? `<a class="btn btn--primary btn--sm" href="${escapeAttr(sponsorContactHref(presenter))}" target="_blank" rel="noopener noreferrer">${escapeHtml(sponsorContactLabel(presenter))}</a>`
-            : ""
+          (() => {
+            const href = sponsorContactHref(presenter);
+            const label = sponsorContactLabel(presenter);
+            if (!href || !label) return "";
+            return `<a class="btn btn--primary btn--sm" href="${escapeAttr(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+          })()
         }
       </div>
     `;
@@ -580,6 +600,7 @@
         const presenter = s.tier === "presenter" ? " sponsor-card--presenter" : "";
         const hasLogo = Boolean(s.logo_url);
         const contactHref = sponsorContactHref(s);
+        const contactLabel = sponsorContactLabel(s);
         const logoBlock = hasLogo
           ? `<div class="sponsor-card__logo-wrap">
                <img class="sponsor-card__logo" src="${escapeAttr(s.logo_url)}" alt="${escapeAttr(s.name)}" loading="lazy" width="240" height="80">
@@ -587,12 +608,16 @@
           : `<div class="sponsor-card__mark" aria-hidden="true">${escapeHtml(
               (s.name || "MD").trim().slice(0, 2).toUpperCase()
             )}</div>`;
-        const contactBlock = contactHref
-          ? `<a class="sponsor-card__link" href="${escapeAttr(contactHref)}" target="_blank" rel="noopener noreferrer">
-              ${escapeHtml(sponsorContactLabel(s))} →
+        const isInternal = contactHref.startsWith("#");
+        const contactBlock =
+          contactHref && contactLabel
+            ? `<a class="sponsor-card__link" href="${escapeAttr(contactHref)}"${
+                isInternal
+                  ? ""
+                  : ' target="_blank" rel="noopener noreferrer"'
+              }>
+              ${escapeHtml(contactLabel)} →
             </a>`
-          : s.tier === "available"
-            ? `<a class="sponsor-card__link" href="#comercial">Cotiza tu espacio →</a>`
             : "";
 
         return `
