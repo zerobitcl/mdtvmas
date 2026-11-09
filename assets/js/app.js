@@ -52,6 +52,7 @@
         name: "MD Climatización",
         category: "Presentador Oficial",
         cta: "Venta, mantención y reparación de aire acondicionado. Cotiza hoy.",
+        phone: "+56962397613",
         whatsapp:
           "https://wa.me/56962397613?text=Hola%2C%20vi%20MD%20Climatizaci%C3%B3n%20en%20MDTV%2B%20y%20quiero%20cotizar",
         logo_url: "assets/img/sponsor-md-climatizacion.jpg",
@@ -61,22 +62,23 @@
         name: "Ilustre Municipalidad de Vallenar",
         category: "Auspiciador Gold",
         cta: "Apoyando el deporte local de Atacama.",
-        whatsapp:
-          "https://wa.me/56962397613?text=Hola%2C%20vi%20a%20la%20Municipalidad%20de%20Vallenar%20en%20MDTV%2B",
+        phone: "",
+        whatsapp: "",
         tier: "gold",
       },
       {
         name: "Comercial Atacama",
         category: "Auspiciador Gold",
         cta: "Todo para tu negocio y tu familia en la Región.",
-        whatsapp:
-          "https://wa.me/56962397613?text=Hola%2C%20vi%20Comercial%20Atacama%20en%20MDTV%2B",
+        phone: "",
+        whatsapp: "",
         tier: "gold",
       },
       {
         name: "Espacio Disponible",
         category: "Anuncia Aquí",
         cta: "Tu marca puede aparecer aquí ante miles de hinchas.",
+        phone: "",
         whatsapp:
           "https://wa.me/56962397613?text=Hola%20MDTV%2B%2C%20quiero%20anunciar%20mi%20marca%20en%20las%20transmisiones%20en%20vivo",
         tier: "available",
@@ -195,11 +197,20 @@
   function ytEmbedUrl(videoId, { autoplay = 0 } = {}) {
     const params = new URLSearchParams({
       autoplay: String(autoplay),
+      mute: autoplay ? "1" : "0",
       rel: "0",
       modestbranding: "1",
       playsinline: "1",
+      enablejsapi: "1",
     });
-    return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
+    try {
+      if (window.location.origin && window.location.origin !== "null") {
+        params.set("origin", window.location.origin);
+      }
+    } catch {
+      /* ignore */
+    }
+    return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
   }
 
   function ytChatUrl(videoId) {
@@ -243,7 +254,21 @@
       }
       return `+${digits}`;
     }
-    return digits ? `+${digits}` : "Contacto";
+    return digits ? `+${digits}` : "";
+  }
+
+  function sponsorContactHref(sponsor) {
+    const wa = String(sponsor?.whatsapp || "").trim();
+    if (wa) return wa;
+    const phone = waDigits(sponsor?.phone || "");
+    return phone ? `https://wa.me/${phone}` : "";
+  }
+
+  function sponsorContactLabel(sponsor) {
+    // Solo teléfono propio del auspiciador (campo phone). "Espacio disponible" usa otro texto.
+    if (sponsor?.tier === "available") return "Anuncia aquí";
+    const phone = formatPhoneLabel(sponsor?.phone || "");
+    return phone ? `Contacto · ${phone}` : "Contacto";
   }
 
   function applyChannelLinks() {
@@ -536,7 +561,11 @@
         <p class="ficha__sponsor-label">${escapeHtml(presenter.category)}</p>
         <p class="ficha__sponsor-name">${escapeHtml(presenter.name)}</p>
         <p class="ficha__sponsor-cta">${escapeHtml(presenter.cta)}</p>
-        <a class="btn btn--primary btn--sm" href="${escapeAttr(presenter.whatsapp)}" target="_blank" rel="noopener noreferrer">Contacto · ${escapeHtml(formatPhoneLabel(presenter.whatsapp))}</a>
+        ${
+          sponsorContactHref(presenter)
+            ? `<a class="btn btn--primary btn--sm" href="${escapeAttr(sponsorContactHref(presenter))}" target="_blank" rel="noopener noreferrer">${escapeHtml(sponsorContactLabel(presenter))}</a>`
+            : ""
+        }
       </div>
     `;
   }
@@ -550,6 +579,7 @@
         const avail = s.tier === "available" ? " sponsor-card--available" : "";
         const presenter = s.tier === "presenter" ? " sponsor-card--presenter" : "";
         const hasLogo = Boolean(s.logo_url);
+        const contactHref = sponsorContactHref(s);
         const logoBlock = hasLogo
           ? `<div class="sponsor-card__logo-wrap">
                <img class="sponsor-card__logo" src="${escapeAttr(s.logo_url)}" alt="${escapeAttr(s.name)}" loading="lazy" width="240" height="80">
@@ -557,6 +587,13 @@
           : `<div class="sponsor-card__mark" aria-hidden="true">${escapeHtml(
               (s.name || "MD").trim().slice(0, 2).toUpperCase()
             )}</div>`;
+        const contactBlock = contactHref
+          ? `<a class="sponsor-card__link" href="${escapeAttr(contactHref)}" target="_blank" rel="noopener noreferrer">
+              ${escapeHtml(sponsorContactLabel(s))} →
+            </a>`
+          : s.tier === "available"
+            ? `<a class="sponsor-card__link" href="#comercial">Cotiza tu espacio →</a>`
+            : "";
 
         return `
           <article class="sponsor-card${avail}${presenter}${hasLogo ? " sponsor-card--has-logo" : ""}">
@@ -564,9 +601,7 @@
             <p class="sponsor-card__tier">${escapeHtml(s.category)}</p>
             <h3 class="sponsor-card__name">${escapeHtml(s.name)}</h3>
             <p class="sponsor-card__cta">${escapeHtml(s.cta)}</p>
-            <a class="sponsor-card__link" href="${escapeAttr(s.whatsapp)}" target="_blank" rel="noopener noreferrer">
-              Contacto · ${escapeHtml(formatPhoneLabel(s.whatsapp))} →
-            </a>
+            ${contactBlock}
           </article>
         `;
       })
@@ -677,16 +712,19 @@
 
   function playVod(index) {
     const vod = state.config.vod_matches[index];
-    if (!vod) return;
+    if (!vod || !vod.youtube_id) return;
 
     state.watchingReplay = true;
     state.replayTitle = vod.title;
     state.isLive = false;
+    state.activeYoutubeId = null;
 
-    // force:true — si el VOD usa el mismo ID que la señal en vivo, igual remonta con autoplay
+    // force + mute: remonta siempre y permite autoplay en móviles/dominio temporal
     renderLivePlayer(vod.youtube_id, { autoplay: 1, force: true });
-    $("#replay-banner").hidden = false;
-    $("#replay-title").textContent = vod.title;
+    const banner = $("#replay-banner");
+    if (banner) banner.hidden = false;
+    const titleEl = $("#replay-title");
+    if (titleEl) titleEl.textContent = vod.title;
     renderTicker();
     updateChatFrame();
 

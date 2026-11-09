@@ -40,6 +40,7 @@
       "name": "MD Climatización",
       "category": "Presentador Oficial",
       "cta": "Venta, mantención y reparación de aire acondicionado. Cotiza hoy.",
+      "phone": "+56962397613",
       "whatsapp": "https://wa.me/56962397613?text=Hola%2C%20vi%20MD%20Climatizaci%C3%B3n%20en%20MDTV%2B%20y%20quiero%20cotizar",
       "logo_url": "assets/img/sponsor-md-climatizacion.jpg",
       "tier": "presenter"
@@ -48,20 +49,23 @@
       "name": "Ilustre Municipalidad de Vallenar",
       "category": "Auspiciador Gold",
       "cta": "Apoyando el deporte local de Atacama.",
-      "whatsapp": "https://wa.me/56962397613?text=Hola%2C%20vi%20a%20la%20Municipalidad%20de%20Vallenar%20en%20MDTV%2B",
+      "phone": "",
+      "whatsapp": "",
       "tier": "gold"
     },
     {
       "name": "Comercial Atacama",
       "category": "Auspiciador Gold",
       "cta": "Todo para tu negocio y tu familia en la Región.",
-      "whatsapp": "https://wa.me/56962397613?text=Hola%2C%20vi%20Comercial%20Atacama%20en%20MDTV%2B",
+      "phone": "",
+      "whatsapp": "",
       "tier": "gold"
     },
     {
       "name": "Espacio Disponible",
       "category": "Anuncia Aquí",
       "cta": "Tu marca puede aparecer aquí ante miles de hinchas.",
+      "phone": "",
       "whatsapp": "https://wa.me/56962397613?text=Hola%20MDTV%2B%2C%20quiero%20anunciar%20mi%20marca%20en%20las%20transmisiones%20en%20vivo",
       "tier": "available"
     }

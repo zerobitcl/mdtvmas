@@ -398,15 +398,17 @@ function merge_incoming_config(array $base, array $incoming): array
                 $tier = 'gold';
             }
             $logoUrl = trim((string)($s['logo_url'] ?? ''));
-            // Solo rutas locales de uploads o URLs http(s) absolutas
-            if ($logoUrl !== '' && !preg_match('#^(assets/uploads/[a-zA-Z0-9._-]+|https?://)#', $logoUrl)) {
+            // Solo rutas locales de assets o URLs http(s) absolutas
+            if ($logoUrl !== '' && !preg_match('#^(assets/(uploads|img)/[a-zA-Z0-9._/-]+|https?://)#', $logoUrl)) {
                 $logoUrl = '';
             }
+            $phone = preg_replace('/[^\d+]/', '', (string)($s['phone'] ?? '')) ?? '';
 
             $sponsors[] = [
                 'name'     => $name,
                 'category' => (string)($s['category'] ?? 'Auspiciador'),
                 'cta'      => (string)($s['cta'] ?? ''),
+                'phone'    => $phone,
                 'whatsapp' => normalize_whatsapp_link((string)($s['whatsapp'] ?? '')),
                 'tier'     => $tier,
                 'logo_url' => $logoUrl,
@@ -1329,7 +1331,11 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
             <textarea data-f="cta" rows="2">${esc(s.cta || "")}</textarea>
           </div>
           <div class="field">
-            <label>WhatsApp / Link</label>
+            <label>Teléfono del auspiciador (se muestra en Contacto)</label>
+            <input type="tel" data-f="phone" value="${esc(s.phone || "")}" placeholder="+56912345678" inputmode="tel">
+          </div>
+          <div class="field">
+            <label>WhatsApp del auspiciador (link al tocar Contacto)</label>
             <input type="text" data-f="whatsapp" value="${esc(s.whatsapp || "")}" placeholder="+569... o https://wa.me/...">
           </div>
           <div class="field">
@@ -1363,6 +1369,7 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
         name: card.querySelector('[data-f="name"]').value.trim(),
         category: card.querySelector('[data-f="category"]').value,
         cta: card.querySelector('[data-f="cta"]').value.trim(),
+        phone: (card.querySelector('[data-f="phone"]')?.value || "").trim(),
         whatsapp: card.querySelector('[data-f="whatsapp"]').value.trim(),
         tier: card.querySelector('[data-f="tier"]').value,
         logo_url: (card.querySelector('[data-f="logo_url"]')?.value || "").trim(),
@@ -1705,7 +1712,8 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
           name: "Nueva Marca",
           category: "Auspiciador Gold",
           cta: "Tu mensaje aquí",
-          whatsapp: "https://wa.me/56962397613",
+          phone: "",
+          whatsapp: "",
           tier: "gold",
           logo_url: "",
         });

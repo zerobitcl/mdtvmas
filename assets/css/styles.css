@@ -24,7 +24,7 @@
   --radius-lg: 16px;
   --font-display: "Outfit", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
-  --header-h: 64px;
+  --header-h: 76px;
   --ticker-h: 40px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --max: 1280px;
@@ -258,23 +258,23 @@ ul, ol {
 
 .logo__img {
   display: block;
-  height: 44px;
+  height: 60px;
   width: auto;
-  max-width: 140px;
+  max-width: 180px;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .logo__img--footer {
-  height: 64px;
-  max-width: 160px;
+  height: 96px;
+  max-width: 220px;
   margin-bottom: 8px;
 }
 
 @media (min-width: 768px) {
   .logo__img {
-    height: 52px;
-    max-width: 160px;
+    height: 68px;
+    max-width: 200px;
   }
 }
 
@@ -1663,7 +1663,12 @@ h3 {
 /* ---------- Desktop ---------- */
 @media (min-width: 960px) {
   :root {
-    --header-h: 68px;
+    --header-h: 84px;
+  }
+
+  .logo__img {
+    height: 72px;
+    max-width: 220px;
   }
 
   .nav {
