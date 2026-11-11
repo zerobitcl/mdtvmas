@@ -124,15 +124,25 @@ function news_share_buttons(string $modifier = ''): void
 {
     $isRail = ($modifier === 'share-rail');
     $cls = $isRail ? 'share-rail' : ('share-bar' . ($modifier !== '' ? ' ' . $modifier : ''));
+    $ico = static function (string $path): string {
+        return '<svg class="share-btn__ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="' . $path . '"/></svg>';
+    };
+    // Paths compactos (WhatsApp / Facebook / X / copy / share)
+    $wa = 'M12.04 2C6.58 2 2.15 6.4 2.15 11.84c0 1.98.58 3.82 1.58 5.4L2 22l4.92-1.67a9.86 9.86 0 0 0 5.12 1.4h.01c5.46 0 9.89-4.4 9.89-9.84C21.94 6.4 17.5 2 12.04 2m0 17.94h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-3.05 1.01 1.03-2.97-.2-.31a8.08 8.08 0 0 1-1.24-4.32c0-4.48 3.67-8.12 8.19-8.12 4.5 0 8.18 3.64 8.18 8.12 0 4.48-3.68 8.1-8.18 8.1m4.49-6.07c-.25-.12-1.46-.72-1.69-.8-.22-.09-.39-.12-.55.12-.16.25-.63.8-.77.97-.14.16-.29.18-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.41-.55-.42h-.47c-.16 0-.43.06-.65.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.55c.12.17 1.75 2.67 4.24 3.74 1.49.64 2.08.7 2.82.59.43-.07 1.46-.6 1.66-1.17.21-.58.21-1.07.14-1.17-.06-.11-.23-.17-.48-.29';
+    $fb = 'M14 8.5h2.5V5H14c-2.2 0-4 1.8-4 4v1.5H7.5V14H10v6h3.5v-6H16l.5-3.5H13.5V9c0-.3.2-.5.5-.5z';
+    $x = 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.727-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z';
+    $copy = 'M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z';
+    $share = 'M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z';
+
     echo '<div class="' . h($cls) . '" role="group" aria-label="Compartir">';
     if (!$isRail && $modifier !== 'share-bar--sticky') {
         echo '<div class="share-bar__label">Compartir</div>';
     }
-    echo '<a class="share-btn share-btn--wa" data-share="whatsapp" href="#" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><span>WhatsApp</span></a>';
-    echo '<a class="share-btn share-btn--fb" data-share="facebook" href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><span>Facebook</span></a>';
-    echo '<a class="share-btn share-btn--x" data-share="x" href="#" target="_blank" rel="noopener noreferrer" aria-label="X"><span>X</span></a>';
-    echo '<button type="button" class="share-btn" data-share="copy"><span>Copiar</span></button>';
-    echo '<button type="button" class="share-btn" data-share="native"><span>Compartir</span></button>';
+    echo '<a class="share-btn share-btn--wa" data-share="whatsapp" href="#" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">' . $ico($wa) . '<span>WhatsApp</span></a>';
+    echo '<a class="share-btn share-btn--fb" data-share="facebook" href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebook">' . $ico($fb) . '<span>Facebook</span></a>';
+    echo '<a class="share-btn share-btn--x" data-share="x" href="#" target="_blank" rel="noopener noreferrer" aria-label="X">' . $ico($x) . '<span>X</span></a>';
+    echo '<button type="button" class="share-btn" data-share="copy" aria-label="Copiar link">' . $ico($copy) . '<span>Copiar</span></button>';
+    echo '<button type="button" class="share-btn" data-share="native" aria-label="Compartir">' . $ico($share) . '<span>Compartir</span></button>';
     echo '</div>';
 }
 ?>
