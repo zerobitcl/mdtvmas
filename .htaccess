@@ -75,7 +75,19 @@ ServerSignature Off
   AddOutputFilterByType BROTLI_COMPRESS application/xml image/svg+xml
 </IfModule>
 
-# ---------- Block PHP execution inside uploads ----------
+# ---------- Pretty URLs: noticias + sitemap ----------
 <IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Block PHP execution inside uploads
   RewriteRule ^assets/uploads/.*\.(?i:php|phtml|php3|php4|php5|phar|cgi|pl|asp|aspx)$ - [F,L]
+
+  # Canonical: /noticia.php?slug=x → /noticias/x
+  RewriteCond %{THE_REQUEST} \s/+noticia\.php\?slug=([a-z0-9-]+)\s [NC]
+  RewriteRule ^noticia\.php$ /noticias/%1? [R=301,L]
+
+  # Pretty routes
+  RewriteRule ^noticias/?$ noticias.php [L,QSA]
+  RewriteRule ^noticias/([a-z0-9-]+)/?$ noticia.php?slug=$1 [L,QSA]
+  RewriteRule ^sitemap\.xml$ sitemap.php [L]
 </IfModule>

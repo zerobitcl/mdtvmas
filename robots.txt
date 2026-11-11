@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin.php
+Disallow: /data/
+Disallow: /inc/
+
+Sitemap: https://mdtvmas.cl/sitemap.xml

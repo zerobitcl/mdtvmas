@@ -6,6 +6,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/inc/news.php';
+
 /* ========== Sesión endurecida (antes de session_start) ========== */
 $mdtvHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || ((int)($_SERVER['SERVER_PORT'] ?? 0) === 443)
@@ -593,41 +595,20 @@ if ($action === 'upload_sponsor_logo' && $_SERVER['REQUEST_METHOD'] === 'POST') 
     }
 
     $file = $_FILES['logo'];
-    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-        json_response(['ok' => false, 'error' => 'Error al subir el archivo (código ' . (int)$file['error'] . ')'], 400);
+    $check = news_validate_uploaded_image($file, 3 * 1024 * 1024);
+    if (!$check['ok']) {
+        json_response(['ok' => false, 'error' => (string)($check['error'] ?? 'Imagen inválida')], 400);
     }
 
-    if (($file['size'] ?? 0) > 3 * 1024 * 1024) {
-        json_response(['ok' => false, 'error' => 'La imagen supera 3 MB'], 400);
-    }
-
-    $tmp = (string)($file['tmp_name'] ?? '');
-    if ($tmp === '' || !is_uploaded_file($tmp)) {
-        json_response(['ok' => false, 'error' => 'Archivo temporal inválido'], 400);
-    }
-
-    $mime = '';
-    if (class_exists('finfo')) {
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file($tmp) ?: '';
-    } elseif (function_exists('mime_content_type')) {
-        $mime = mime_content_type($tmp) ?: '';
-    }
-    $allowed = [
-        'image/jpeg' => 'jpg',
-        'image/png'  => 'png',
-        'image/webp' => 'webp',
-    ];
-    if (!isset($allowed[$mime])) {
-        json_response(['ok' => false, 'error' => 'Solo se permiten JPG, PNG o WEBP'], 400);
-    }
+    $tmp = (string)$file['tmp_name'];
+    $ext = (string)$check['ext'];
 
     $uploadDir = __DIR__ . '/assets/uploads';
     if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
         json_response(['ok' => false, 'error' => 'No se pudo crear /assets/uploads'], 500);
     }
 
-    $filename = 'sponsor_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $allowed[$mime];
+    $filename = 'sponsor_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
     $dest = $uploadDir . DIRECTORY_SEPARATOR . $filename;
     if (!move_uploaded_file($tmp, $dest)) {
         json_response(['ok' => false, 'error' => 'No se pudo guardar la imagen. Revisa permisos de /assets/uploads'], 500);
@@ -639,6 +620,236 @@ if ($action === 'upload_sponsor_logo' && $_SERVER['REQUEST_METHOD'] === 'POST') 
         'path' => $publicPath,
         'url'  => $publicPath,
     ]);
+}
+
+/* ---------- Noticias (CRUD) ---------- */
+
+if ($action === 'news_list' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (!is_authenticated()) {
+        json_response(['ok' => false, 'error' => 'No autorizado'], 401);
+    }
+    json_response(['ok' => true, 'posts' => news_load_index()]);
+}
+
+if ($action === 'news_get' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (!is_authenticated()) {
+        json_response(['ok' => false, 'error' => 'No autorizado'], 401);
+    }
+    $id = (string)($_GET['id'] ?? '');
+    $post = news_load_post($id);
+    if ($post === null) {
+        json_response(['ok' => false, 'error' => 'Noticia no encontrada'], 404);
+    }
+    json_response(['ok' => true, 'post' => $post]);
+}
+
+if ($action === 'news_save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!is_authenticated()) {
+        json_response(['ok' => false, 'error' => 'No autorizado'], 401);
+    }
+    require_csrf_or_fail(true);
+
+    $rawBody = file_get_contents('php://input');
+    $payload = json_decode($rawBody ?: '{}', true);
+    if (!is_array($payload)) {
+        json_response(['ok' => false, 'error' => 'JSON inválido'], 400);
+    }
+
+    $id = trim((string)($payload['id'] ?? ''));
+    $isNew = ($id === '');
+    $existing = null;
+
+    if ($isNew) {
+        $id = news_new_id();
+    } else {
+        if (!news_valid_id($id)) {
+            json_response(['ok' => false, 'error' => 'ID inválido'], 400);
+        }
+        $existing = news_load_post($id);
+        if ($existing === null) {
+            json_response(['ok' => false, 'error' => 'Noticia no encontrada'], 404);
+        }
+    }
+
+    $title = trim((string)($payload['title'] ?? ''));
+    $titleLen = mb_strlen($title);
+    if ($titleLen < 5 || $titleLen > 140) {
+        json_response(['ok' => false, 'error' => 'El título debe tener entre 5 y 140 caracteres'], 400);
+    }
+
+    $excerpt = trim((string)($payload['excerpt'] ?? ''));
+    if (mb_strlen($excerpt) > 200) {
+        $excerpt = mb_substr($excerpt, 0, 200);
+    }
+
+    $category = trim((string)($payload['category'] ?? ''));
+    if (!in_array($category, NEWS_CATEGORIES, true)) {
+        $category = NEWS_CATEGORIES[0];
+    }
+
+    $status = (string)($payload['status'] ?? 'draft');
+    if (!in_array($status, ['draft', 'published'], true)) {
+        $status = 'draft';
+    }
+
+    $publishedAt = '';
+    if (!empty($payload['published_at_local'])) {
+        $publishedAt = news_datetime_local_to_iso((string)$payload['published_at_local']);
+    } elseif (!empty($payload['published_at'])) {
+        $publishedAt = (string)$payload['published_at'];
+    }
+    if ($publishedAt === '' && $status === 'published') {
+        $publishedAt = news_now()->format('c');
+    }
+    if ($publishedAt === '' && $existing) {
+        $publishedAt = (string)($existing['published_at'] ?? '');
+    }
+
+    $wasPublished = $existing && ($existing['status'] ?? '') === 'published';
+    $slugInput = trim((string)($payload['slug'] ?? ''));
+    if ($wasPublished) {
+        // Slug locked once published — keep shared social links intact
+        $slug = (string)($existing['slug'] ?? '');
+    } else {
+        $slug = $slugInput !== '' ? news_slugify($slugInput) : news_slugify($title);
+        $slug = news_unique_slug($slug, $id);
+    }
+    if (!news_valid_slug($slug)) {
+        json_response(['ok' => false, 'error' => 'Slug inválido'], 400);
+    }
+
+    $coverIn = is_array($payload['cover'] ?? null) ? $payload['cover'] : [];
+    $cover = [
+        'full' => (string)($coverIn['full'] ?? ($existing['cover']['full'] ?? '')),
+        'card' => (string)($coverIn['card'] ?? ($existing['cover']['card'] ?? '')),
+        'og'   => (string)($coverIn['og'] ?? ($existing['cover']['og'] ?? '')),
+        'alt'  => trim((string)($coverIn['alt'] ?? ($existing['cover']['alt'] ?? ''))),
+    ];
+    foreach (['full', 'card', 'og'] as $ck) {
+        $v = $cover[$ck];
+        if ($v !== '' && !str_starts_with($v, NEWS_UPLOAD_PUBLIC . '/')) {
+            $cover[$ck] = '';
+        }
+    }
+
+    if ($status === 'published' && ($cover['og'] === '' || $cover['full'] === '')) {
+        json_response(['ok' => false, 'error' => 'La portada es obligatoria para publicar'], 400);
+    }
+
+    $bodyHtml = news_sanitize_html((string)($payload['body_html'] ?? ''));
+    $nowIso = news_now()->format('c');
+
+    $post = [
+        'id'           => $id,
+        'slug'         => $slug,
+        'title'        => $title,
+        'excerpt'      => $excerpt,
+        'category'     => $category,
+        'cover'        => $cover,
+        'body_html'    => $bodyHtml,
+        'status'       => $status,
+        'published_at' => $publishedAt,
+        'created_at'   => (string)($existing['created_at'] ?? $nowIso),
+        'updated_at'   => $nowIso,
+        'author'       => NEWS_AUTHOR,
+    ];
+
+    if (!news_save_post($post)) {
+        json_response(['ok' => false, 'error' => 'No se pudo guardar la noticia. Revisa permisos de /data/news'], 500);
+    }
+
+    json_response([
+        'ok'      => true,
+        'message' => $status === 'published' ? 'Noticia publicada' : 'Borrador guardado',
+        'post'    => $post,
+        'url'     => news_public_url($slug),
+    ]);
+}
+
+if ($action === 'news_delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!is_authenticated()) {
+        json_response(['ok' => false, 'error' => 'No autorizado'], 401);
+    }
+    require_csrf_or_fail(true);
+
+    $rawBody = file_get_contents('php://input');
+    $payload = json_decode($rawBody ?: '{}', true);
+    $id = is_array($payload) ? (string)($payload['id'] ?? '') : (string)($_POST['id'] ?? '');
+    if (!news_valid_id($id)) {
+        json_response(['ok' => false, 'error' => 'ID inválido'], 400);
+    }
+    if (news_load_post($id) === null) {
+        json_response(['ok' => false, 'error' => 'Noticia no encontrada'], 404);
+    }
+    if (!news_delete_post($id)) {
+        json_response(['ok' => false, 'error' => 'No se pudo eliminar'], 500);
+    }
+    json_response(['ok' => true, 'message' => 'Noticia eliminada']);
+}
+
+if ($action === 'news_upload_cover' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!is_authenticated()) {
+        json_response(['ok' => false, 'error' => 'No autorizado'], 401);
+    }
+    require_csrf_or_fail(true);
+
+    $id = trim((string)($_POST['id'] ?? ''));
+    if (!news_valid_id($id)) {
+        // Allow uploading cover for a brand-new draft id generated client-side
+        if ($id === '') {
+            $id = news_new_id();
+        } else {
+            json_response(['ok' => false, 'error' => 'ID inválido'], 400);
+        }
+    }
+
+    if (empty($_FILES['image']) || !is_array($_FILES['image'])) {
+        json_response(['ok' => false, 'error' => 'No se recibió ninguna imagen'], 400);
+    }
+
+    $check = news_validate_uploaded_image($_FILES['image'], NEWS_MAX_COVER_BYTES);
+    if (!$check['ok']) {
+        json_response(['ok' => false, 'error' => (string)($check['error'] ?? 'Imagen inválida')], 400);
+    }
+
+    $paths = news_process_cover((string)$_FILES['image']['tmp_name'], $id);
+    if ($paths === null) {
+        json_response(['ok' => false, 'error' => 'No se pudo procesar la imagen (¿GD habilitado?)'], 500);
+    }
+
+    json_response([
+        'ok'    => true,
+        'id'    => $id,
+        'cover' => $paths,
+    ]);
+}
+
+if ($action === 'news_upload_inline' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!is_authenticated()) {
+        json_response(['ok' => false, 'error' => 'No autorizado'], 401);
+    }
+    require_csrf_or_fail(true);
+
+    $id = trim((string)($_POST['id'] ?? ''));
+    if (!news_valid_id($id)) {
+        json_response(['ok' => false, 'error' => 'Guarda un borrador o sube la portada primero para obtener un ID'], 400);
+    }
+
+    if (empty($_FILES['image']) || !is_array($_FILES['image'])) {
+        json_response(['ok' => false, 'error' => 'No se recibió ninguna imagen'], 400);
+    }
+
+    $check = news_validate_uploaded_image($_FILES['image'], NEWS_MAX_INLINE_BYTES);
+    if (!$check['ok']) {
+        json_response(['ok' => false, 'error' => (string)($check['error'] ?? 'Imagen inválida')], 400);
+    }
+
+    $path = news_process_inline_image((string)$_FILES['image']['tmp_name'], $id);
+    if ($path === null) {
+        json_response(['ok' => false, 'error' => 'No se pudo procesar la imagen'], 500);
+    }
+
+    json_response(['ok' => true, 'path' => $path, 'url' => $path]);
 }
 
 if ($action === 'config' && is_authenticated()) {
@@ -830,14 +1041,14 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
     /* Layout */
     .wrap { max-width: 720px; margin: 0 auto; padding: 14px 12px 24px; }
     .tabs {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
       margin-bottom: 14px; position: sticky; top: var(--top); z-index: 30;
       background: rgba(7,9,14,.92); backdrop-filter: blur(10px);
       padding: 8px 0;
     }
     .tabs__btn {
-      min-height: 46px; padding: 8px 6px; border-radius: 10px;
-      font-size: .72rem; font-weight: 700; color: var(--dim);
+      min-height: 46px; padding: 8px 4px; border-radius: 10px;
+      font-size: .68rem; font-weight: 700; color: var(--dim);
       border: 1px solid var(--border); background: var(--card);
     }
     .tabs__btn.is-active {
@@ -1040,11 +1251,149 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
     .btn-upload:disabled { opacity: .55; cursor: wait; }
     .logo-box input[type="file"] { display: none; }
 
+    /* ----- Noticias ----- */
+    .savebar.is-hidden { display: none !important; }
+    .news-filters {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+    }
+    .news-chip {
+      min-height: 36px; padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--border2); background: #0a0d14;
+      font-size: .75rem; font-weight: 700; color: var(--muted);
+    }
+    .news-chip.is-active {
+      color: #fff; border-color: rgba(230,57,70,.5);
+      background: rgba(230,57,70,.18);
+    }
+    .news-list-card {
+      display: grid; grid-template-columns: 88px 1fr; gap: 12px;
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px; margin-bottom: 10px;
+    }
+    .news-list-card__thumb {
+      width: 88px; height: 66px; border-radius: 8px; object-fit: cover;
+      background: #0a0d14; display: block;
+    }
+    .news-list-card__thumb.is-empty {
+      display: grid; place-items: center; color: var(--dim); font-size: .65rem;
+    }
+    .news-list-card__title {
+      font-family: var(--display); font-weight: 700; font-size: .95rem;
+      line-height: 1.25; margin-bottom: 4px;
+    }
+    .news-list-card__meta {
+      font-size: .72rem; color: var(--muted); margin-bottom: 8px;
+    }
+    .news-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: .65rem; font-weight: 700; letter-spacing: .04em;
+      padding: 3px 8px; border-radius: 999px; text-transform: uppercase;
+    }
+    .news-badge--pub {
+      background: rgba(0,230,118,.12); color: var(--neon);
+      border: 1px solid rgba(0,230,118,.35);
+    }
+    .news-badge--sched {
+      background: rgba(251,191,36,.12); color: #fbbf24;
+      border: 1px solid rgba(251,191,36,.4);
+    }
+    .news-badge--draft {
+      background: rgba(148,163,184,.12); color: var(--muted);
+      border: 1px solid rgba(148,163,184,.3);
+    }
+    .news-list-card__actions {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .news-editor-bar {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+      align-items: center;
+    }
+    .news-toolbar {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      position: sticky; top: calc(var(--top) + 54px); z-index: 25;
+      background: rgba(15,20,31,.94); backdrop-filter: blur(10px);
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 6px; margin-bottom: 8px;
+    }
+    .news-toolbar button {
+      min-height: 36px; min-width: 36px; padding: 6px 8px;
+      border-radius: 8px; border: 1px solid var(--border2);
+      background: #0a0d14; color: var(--muted); font-size: .72rem; font-weight: 700;
+    }
+    .news-toolbar button:hover { color: var(--text); border-color: var(--muted); }
+    .news-editor {
+      min-height: 220px; max-height: 55vh; overflow-y: auto;
+      background: #0a0d14; border: 1px solid var(--border2);
+      border-radius: 10px; padding: 14px; line-height: 1.55;
+      outline: none;
+    }
+    .news-editor:focus { border-color: rgba(0,230,118,.45); }
+    .news-editor:empty::before {
+      content: attr(data-placeholder); color: var(--dim); pointer-events: none;
+    }
+    .news-editor h2 { font-family: var(--display); font-size: 1.25rem; margin: .8em 0 .4em; }
+    .news-editor h3 { font-family: var(--display); font-size: 1.05rem; margin: .7em 0 .35em; }
+    .news-editor p { margin: 0 0 .75em; }
+    .news-editor ul, .news-editor ol { margin: 0 0 .75em; padding-left: 1.25em; }
+    .news-editor blockquote {
+      margin: .75em 0; padding: .5em .85em;
+      border-left: 3px solid var(--live); color: var(--muted);
+      background: rgba(255,255,255,.03);
+    }
+    .news-editor figure { margin: 1em 0; }
+    .news-editor figure img { max-width: 100%; height: auto; border-radius: 8px; display: block; }
+    .news-editor figcaption { font-size: .8rem; color: var(--muted); margin-top: 6px; }
+    .news-editor [data-yt] {
+      position: relative; aspect-ratio: 16/9; background: #000;
+      border-radius: 8px; overflow: hidden;
+    }
+    .news-editor [data-yt] img { width: 100%; height: 100%; object-fit: cover; }
+    .char-count { font-size: .72rem; color: var(--dim); text-align: right; margin-top: 4px; }
+    .char-count.is-warn { color: #fbbf24; }
+    .char-count.is-over { color: #ff8a93; }
+    .social-preview {
+      background: #fff; color: #1c1e21; border-radius: 10px; overflow: hidden;
+      border: 1px solid var(--border2); max-width: 420px;
+    }
+    .social-preview__img {
+      width: 100%; aspect-ratio: 1.91 / 1; object-fit: cover; display: block;
+      background: #e4e6eb;
+    }
+    .social-preview__body { padding: 10px 12px; }
+    .social-preview__domain {
+      font-size: .7rem; text-transform: uppercase; color: #65676b; letter-spacing: .04em;
+    }
+    .social-preview__title {
+      font-weight: 700; font-size: .95rem; line-height: 1.25; margin: 2px 0;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .social-preview__desc {
+      font-size: .8rem; color: #65676b; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .news-savebar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+      padding: 10px 12px calc(10px + var(--safe-b));
+      background: rgba(7,9,14,.94);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+      display: none; flex-wrap: wrap; gap: 8px;
+    }
+    .news-savebar.is-visible { display: flex; }
+    .news-savebar .btn-primary { flex: 1; min-width: 140px; }
+    .news-cover-preview {
+      width: 100%; aspect-ratio: 1.91 / 1; object-fit: cover;
+      border-radius: 10px; background: #0a0d14; display: none; margin-bottom: 10px;
+    }
+    .news-cover-preview.is-visible { display: block; }
+    body.has-news-editor { padding-bottom: calc(120px + var(--safe-b)); }
+
     @media (min-width: 640px) {
       .badge-grid { grid-template-columns: repeat(3, 1fr); }
-      .tabs__btn { font-size: .8rem; }
+      .tabs__btn { font-size: .78rem; }
     }
   </style>
+  <meta name="csrf-token" content="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
 </head>
 <body>
 
@@ -1093,6 +1442,7 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
       <button type="button" class="tabs__btn is-active" data-tab="live" role="tab" aria-selected="true">En Vivo &amp; Marcador</button>
       <button type="button" class="tabs__btn" data-tab="sponsors" role="tab" aria-selected="false">Auspiciadores</button>
       <button type="button" class="tabs__btn" data-tab="schedule" role="tab" aria-selected="false">Cartelera &amp; VOD</button>
+      <button type="button" class="tabs__btn" data-tab="news" role="tab" aria-selected="false">Noticias</button>
     </nav>
 
     <!-- TAB 1 -->
@@ -1243,10 +1593,133 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
         <button type="button" class="btn-add" id="add-vod">+ Agregar repetición</button>
       </section>
     </div>
+
+    <!-- TAB 4: Noticias -->
+    <div class="panel" id="panel-news" role="tabpanel" hidden>
+      <div id="news-view-list">
+        <section class="card">
+          <h2 class="card__title">Noticias / Blog</h2>
+          <p class="card__hint">Escribe, programa y publica. Cada noticia tiene link propio para redes sociales.</p>
+          <button type="button" class="btn-add" id="news-btn-new" style="margin-top:0;margin-bottom:12px">+ Nueva noticia</button>
+          <div class="news-filters" id="news-filters" role="tablist" aria-label="Filtrar noticias">
+            <button type="button" class="news-chip is-active" data-filter="all">Todas</button>
+            <button type="button" class="news-chip" data-filter="published">Publicadas</button>
+            <button type="button" class="news-chip" data-filter="scheduled">Programadas</button>
+            <button type="button" class="news-chip" data-filter="draft">Borradores</button>
+          </div>
+          <div id="news-list"></div>
+        </section>
+      </div>
+
+      <div id="news-view-editor" hidden>
+        <div class="news-editor-bar">
+          <button type="button" class="btn-ghost" id="news-btn-back">← Volver al listado</button>
+        </div>
+
+        <section class="card">
+          <h2 class="card__title">Portada</h2>
+          <p class="card__hint">Foto horizontal ideal. Se genera automáticamente la tarjeta para WhatsApp (1200×630).</p>
+          <img class="news-cover-preview" id="news-cover-preview" alt="Vista previa de portada">
+          <input type="hidden" id="news-cover-full" value="">
+          <input type="hidden" id="news-cover-card" value="">
+          <input type="hidden" id="news-cover-og" value="">
+          <div class="logo-box__row" style="margin-bottom:10px">
+            <button type="button" class="btn-upload" id="news-btn-cover">Subir foto de portada</button>
+            <input type="file" id="news-cover-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" capture="environment">
+          </div>
+          <div class="field">
+            <label for="news-cover-alt">Texto alternativo de la imagen</label>
+            <input type="text" id="news-cover-alt" maxlength="120" placeholder="Describe la foto en una frase">
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Contenido</h2>
+          <div class="field">
+            <label for="news-title">Título</label>
+            <input type="text" id="news-title" maxlength="140" placeholder="Titular de la noticia">
+            <div class="char-count" id="news-title-count">0 / 140 · ideal ≤ 70 para WhatsApp</div>
+          </div>
+          <div class="field">
+            <label for="news-slug">Slug (URL)</label>
+            <input type="text" id="news-slug" maxlength="80" placeholder="se-genera-del-titulo" autocomplete="off">
+            <div class="char-count" id="news-slug-preview">mdtvmas.cl/noticias/…</div>
+          </div>
+          <div class="field">
+            <label for="news-excerpt">Bajada (aparece en redes)</label>
+            <textarea id="news-excerpt" rows="3" maxlength="200" placeholder="Resumen corto que se ve en WhatsApp y Facebook"></textarea>
+            <div class="char-count" id="news-excerpt-count">0 / 200</div>
+          </div>
+          <div class="field">
+            <label for="news-category">Categoría</label>
+            <select id="news-category">
+              <?php foreach (NEWS_CATEGORIES as $cat): ?>
+                <option value="<?= htmlspecialchars($cat, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($cat, ENT_QUOTES, 'UTF-8') ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+
+          <label style="font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px">Cuerpo</label>
+          <div class="news-toolbar" id="news-toolbar" role="toolbar" aria-label="Formato">
+            <button type="button" data-cmd="h2" title="Subtítulo">H2</button>
+            <button type="button" data-cmd="h3" title="Subtítulo menor">H3</button>
+            <button type="button" data-cmd="bold" title="Negrita"><b>B</b></button>
+            <button type="button" data-cmd="italic" title="Cursiva"><i>I</i></button>
+            <button type="button" data-cmd="ul" title="Lista">• Lista</button>
+            <button type="button" data-cmd="ol" title="Lista numerada">1. Lista</button>
+            <button type="button" data-cmd="quote" title="Cita">“ ”</button>
+            <button type="button" data-cmd="link" title="Enlace">Link</button>
+            <button type="button" data-cmd="image" title="Imagen">Img</button>
+            <button type="button" data-cmd="youtube" title="YouTube">YT</button>
+          </div>
+          <input type="file" id="news-inline-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" hidden>
+          <div class="news-editor" id="news-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Escribe la noticia aquí…"></div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Vista previa en redes</h2>
+          <p class="card__hint">Así se verá el link en WhatsApp / Facebook.</p>
+          <div class="social-preview" id="news-social-preview">
+            <img class="social-preview__img" id="news-sp-img" alt="" src="">
+            <div class="social-preview__body">
+              <div class="social-preview__domain">mdtvmas.cl</div>
+              <div class="social-preview__title" id="news-sp-title">Título de la noticia</div>
+              <div class="social-preview__desc" id="news-sp-desc">La bajada aparece aquí…</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card__title">Publicación</h2>
+          <div class="field">
+            <label>Estado</label>
+            <div class="row-2" style="margin-top:4px">
+              <label class="badge-chip" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+                <input type="radio" name="news-status" value="draft" checked style="accent-color:var(--neon)"> Borrador
+              </label>
+              <label class="badge-chip" style="cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+                <input type="radio" name="news-status" value="published" style="accent-color:var(--live)"> Publicar
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="news-published-at">Fecha de publicación</label>
+            <input type="datetime-local" id="news-published-at">
+            <div class="char-count">Si es futura, la noticia queda programada y aparece sola a esa hora.</div>
+          </div>
+        </section>
+      </div>
+    </div>
   </div>
 
-  <div class="savebar">
+  <div class="savebar" id="savebar">
     <button type="button" class="btn-primary" id="btn-save">Guardar y Publicar en Vivo</button>
+  </div>
+  <div class="news-savebar" id="news-savebar">
+    <button type="button" class="btn-ghost" id="news-btn-draft">Guardar borrador</button>
+    <button type="button" class="btn-primary" id="news-btn-publish">Publicar</button>
+    <button type="button" class="btn-ghost" id="news-btn-preview" hidden>Ver noticia ↗</button>
+    <button type="button" class="btn-danger" id="news-btn-delete" hidden>Eliminar</button>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -1769,8 +2242,25 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
           $("#panel-live").hidden = tab !== "live";
           $("#panel-sponsors").hidden = tab !== "sponsors";
           $("#panel-schedule").hidden = tab !== "schedule";
+          const newsPanel = $("#panel-news");
+          if (newsPanel) newsPanel.hidden = tab !== "news";
+
+          const savebar = $("#savebar");
+          const newsSavebar = $("#news-savebar");
+          const onNews = tab === "news";
+          if (savebar) savebar.classList.toggle("is-hidden", onNews);
+          if (newsSavebar) {
+            // Solo visible dentro del editor; admin-news.js controla is-visible
+            if (!onNews) newsSavebar.classList.remove("is-visible");
+          }
+          document.body.classList.toggle("has-news-editor", false);
+          window.dispatchEvent(new CustomEvent("mdtv:tab", { detail: { tab } }));
         });
       });
+
+      // Toast compartido con admin-news.js
+      window.mdtvShowToast = showToast;
+      window.mdtvExtractYoutubeId = extractYoutubeId;
 
       $("#is-live-switch").addEventListener("click", () => {
         if (state.seasonPaused) return;
@@ -1932,6 +2422,7 @@ $nextLocal = iso_to_datetime_local((string)($config['live_stream']['next_match_i
     bind();
   })();
   </script>
+  <script src="assets/js/admin-news.js" defer></script>
 <?php endif; ?>
 </body>
 </html>

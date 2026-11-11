@@ -5,11 +5,20 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Uploads de auspiciadores (se generan en el servidor)
+# Uploads (sponsors + noticias — se generan en el servidor)
 assets/uploads/*
 !assets/uploads/.gitkeep
 !assets/uploads/.htaccess
+!assets/uploads/news/
+assets/uploads/news/*
+!assets/uploads/news/.gitkeep
+!assets/uploads/news/.htaccess
 
 # Rate-limit / temporales del admin (no versionar)
 data/login_attempts.json
 data/*.tmp
+
+# Noticias generadas en producción (no pisar en deploy)
+data/news/posts/*.json
+data/news/index.json
+!data/news/posts/.gitkeep

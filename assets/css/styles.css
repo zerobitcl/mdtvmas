@@ -1337,6 +1337,118 @@ h3 {
   color: var(--neon);
 }
 
+/* ---------- Home Noticias ---------- */
+.noticias {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 48px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.news-home-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .news-home-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 960px) {
+  .news-home-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.news-skel {
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 0%,
+    var(--bg-hover) 50%,
+    var(--bg-elevated) 100%
+  );
+  background-size: 200% 100%;
+  animation: news-shimmer 1.4s ease-in-out infinite;
+  min-height: 280px;
+}
+
+@keyframes news-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.news-home-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.25s var(--ease), border-color 0.25s, box-shadow 0.25s;
+}
+
+.news-home-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.news-home-card__thumb {
+  aspect-ratio: 16 / 9;
+  background: #111;
+  overflow: hidden;
+}
+
+.news-home-card__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s var(--ease);
+}
+
+.news-home-card:hover .news-home-card__thumb img {
+  transform: scale(1.05);
+}
+
+.news-home-card__body {
+  padding: 14px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.news-home-card__cat {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--neon);
+}
+
+.news-home-card__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.news-home-card__date {
+  margin-top: auto;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
 /* ---------- VOD ---------- */
 .archivo {
   max-width: var(--max);

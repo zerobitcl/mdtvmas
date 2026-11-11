@@ -796,6 +796,99 @@
   }
 
   /* ------------------------------------------------------------------
+   * Home news (lazy feed)
+   * ------------------------------------------------------------------ */
+  function formatNewsDate(iso) {
+    try {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toLocaleDateString("es-CL", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return "";
+    }
+  }
+
+  function renderNews(posts) {
+    const section = $("#noticias");
+    const grid = $("#news-grid");
+    if (!section || !grid) return;
+
+    if (!Array.isArray(posts) || posts.length === 0) {
+      section.hidden = true;
+      return;
+    }
+
+    section.hidden = false;
+    grid.innerHTML = posts
+      .slice(0, 3)
+      .map((p) => {
+        const thumb = p.cover?.card || p.cover?.og || "";
+        const alt = p.cover?.alt || "";
+        return `
+        <a class="news-home-card" href="/noticias/${escapeAttr(p.slug)}">
+          <div class="news-home-card__thumb">
+            ${
+              thumb
+                ? `<img src="${escapeAttr(thumb)}" alt="${escapeAttr(alt)}" width="800" height="450" loading="lazy" decoding="async">`
+                : ""
+            }
+          </div>
+          <div class="news-home-card__body">
+            <p class="news-home-card__cat">${escapeHtml(p.category || "")}</p>
+            <h3 class="news-home-card__title">${escapeHtml(p.title || "")}</h3>
+            <p class="news-home-card__date">${escapeHtml(formatNewsDate(p.published_at || ""))}</p>
+          </div>
+        </a>`;
+      })
+      .join("");
+  }
+
+  async function loadNewsFeed() {
+    try {
+      const res = await fetch(`noticias-feed.php?t=${Date.now()}`, {
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      if (!res.ok) throw new Error("feed");
+      const data = await res.json();
+      renderNews(Array.isArray(data.posts) ? data.posts : []);
+    } catch {
+      const section = $("#noticias");
+      if (section) section.hidden = true;
+    }
+  }
+
+  function setupNewsLazy() {
+    const section = $("#noticias");
+    if (!section) return;
+
+    // Observar cartelera (siempre en el flujo): la sección noticias
+    // solo se muestra si el feed trae posts (evita skeletons eternos).
+    const target = $("#cartelera") || section;
+
+    if (!("IntersectionObserver" in window)) {
+      loadNewsFeed();
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        // Mostrar skeletons solo al disparar la carga
+        section.hidden = false;
+        loadNewsFeed();
+      },
+      { rootMargin: "400px 0px" }
+    );
+    io.observe(target);
+  }
+
+  /* ------------------------------------------------------------------
    * Interactions
    * ------------------------------------------------------------------ */
   function toggleTheater() {
@@ -1088,6 +1181,7 @@
     renderSponsors();
     renderUpcoming();
     renderVod();
+    setupNewsLazy();
     bindEvents();
     startLiveSync();
   }
