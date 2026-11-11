@@ -656,19 +656,15 @@ if ($action === 'news_save' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $id = trim((string)($payload['id'] ?? ''));
-    $isNew = ($id === '');
     $existing = null;
 
-    if ($isNew) {
+    if ($id === '') {
         $id = news_new_id();
+    } elseif (!news_valid_id($id)) {
+        json_response(['ok' => false, 'error' => 'ID inválido'], 400);
     } else {
-        if (!news_valid_id($id)) {
-            json_response(['ok' => false, 'error' => 'ID inválido'], 400);
-        }
+        // ID puede venir de news_upload_cover (aún sin JSON). Si no existe, se crea.
         $existing = news_load_post($id);
-        if ($existing === null) {
-            json_response(['ok' => false, 'error' => 'Noticia no encontrada'], 404);
-        }
     }
 
     $title = trim((string)($payload['title'] ?? ''));

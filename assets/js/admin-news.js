@@ -504,7 +504,8 @@
       fd.append("id", state.post.id || "");
       fd.append("image", file);
       const data = await api("news_upload_cover", { method: "POST", formData: fd });
-      if (data.id && !state.post.id) {
+      // El ID nace en el upload de portada (aún sin JSON); hay que conservarlo al publicar
+      if (data.id) {
         state.post.id = data.id;
       }
       $("#news-cover-full").value = data.cover.full || "";
